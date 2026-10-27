@@ -14,4 +14,7 @@ contextBridge.exposeInMainWorld('mate', {
   onTick: (fn) => ipcRenderer.on('mate:tick', (_e, s) => fn(s)),
   onSay: (fn) => ipcRenderer.on('mate:say', (_e, msg) => fn(msg)),
   onOpenPrompt: (fn) => ipcRenderer.on('mate:open-prompt', () => fn()),
+  // Dev only: used by the parts template exporter.
+  exportFile: (name, data) => ipcRenderer.send('mate:export-file', name, data),
+  exportDone: () => ipcRenderer.send('mate:export-done'),
 });

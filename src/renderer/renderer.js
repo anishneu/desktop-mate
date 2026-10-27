@@ -15,6 +15,11 @@
   });
   document.getElementById('stage').appendChild(app.view);
 
+  if (new URLSearchParams(location.search).has('export')) {
+    await loadScript('dev/export-template.js');
+    return DM.exportTemplate(app, api);
+  }
+
   const avatar = await createAvatar(cfg);
   avatar.view.position.set(W / 2, H - 2);
   app.stage.addChild(avatar.view);
@@ -130,21 +135,26 @@
   input.addEventListener('blur', closePrompt);
 })().catch((err) => console.error('[renderer]', err));
 
-// Prefer the Live2D model; fall back to the vector placeholder when the Cubism core
-// or the model files are missing.
+// cfg.avatar picks "parts", "live2d" or "placeholder". If the chosen one fails to
+// load (missing files, bad parts.json), the vector placeholder is used instead.
 async function createAvatar(cfg) {
-  const l2d = cfg.live2d;
-  if (l2d && l2d.enabled !== false) {
-    try {
-      if (!window.Live2DCubismCore) await loadScript(l2d.core);
-      await loadScript('../../node_modules/pixi-live2d-display/dist/cubism4.min.js');
-      const avatar = new DM.Live2DAvatar(l2d);
+  try {
+    if (cfg.avatar === 'parts') {
+      const avatar = new DM.PartsAvatar(cfg.parts);
       await avatar.load();
-      console.info(`[avatar] Live2D model loaded: ${l2d.model}`);
+      console.info(`[avatar] parts loaded: ${cfg.parts}`);
       return avatar;
-    } catch (err) {
-      console.warn(`[avatar] Live2D unavailable (${err.message || err}); using the placeholder.`);
     }
+    if (cfg.avatar === 'live2d') {
+      if (!window.Live2DCubismCore) await loadScript(cfg.live2d.core);
+      await loadScript('../../node_modules/pixi-live2d-display/dist/cubism4.min.js');
+      const avatar = new DM.Live2DAvatar(cfg.live2d);
+      await avatar.load();
+      console.info(`[avatar] Live2D model loaded: ${cfg.live2d.model}`);
+      return avatar;
+    }
+  } catch (err) {
+    console.warn(`[avatar] ${cfg.avatar} avatar unavailable (${err.message || err}); using the placeholder.`);
   }
   return new DM.PlaceholderAvatar();
 }

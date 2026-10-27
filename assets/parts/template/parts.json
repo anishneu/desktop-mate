@@ -1,0 +1,43 @@
+{
+  "height": 225,
+  "feet": [300, 700],
+  "pivots": {
+    "neck": [300, 388],
+    "shoulderLeft": [243, 418],
+    "shoulderRight": [357, 418],
+    "hipLeft": [270, 568],
+    "hipRight": [330, 568]
+  },
+  "parts": {
+    "hairBack": "hairBack.png",
+    "legLeft": "legLeft.png",
+    "legRight": "legRight.png",
+    "torso": "torso.png",
+    "armLeft": "armLeft.png",
+    "armRight": "armRight.png",
+    "head": "head.png",
+    "hairFront": "hairFront.png"
+  },
+  "face": {
+    "mode": "sprites",
+    "eyes": {
+      "open": "eyes_open.png",
+      "closed": "eyes_closed.png",
+      "happy": "eyes_happy.png"
+    },
+    "mouth": {
+      "closed": "mouth_closed.png",
+      "smile": "mouth_smile.png",
+      "open": "mouth_open.png",
+      "wide": "mouth_wide.png"
+    },
+    "drawn": {
+      "eyeLeft": [249, 268],
+      "eyeRight": [351, 268],
+      "mouth": [300, 331],
+      "eyeWidth": 54,
+      "iris": "#5a3fa0"
+    }
+  },
+  "facesLeft": false
+}

@@ -16,6 +16,7 @@ const { width: W, height: H } = character.window;
 const TICK_MS = 1000 / 60;
 const PROMPT_SHORTCUT = 'Ctrl+Alt+M';
 const snapshotArg = process.argv.find((a) => a.startsWith('--snapshot='));
+const exportDir = process.argv.find((a) => a.startsWith('--export-template='))?.slice('--export-template='.length);
 
 let win;
 let brain;
@@ -67,11 +68,11 @@ function createWindow() {
   win.setAlwaysOnTop(true, 'screen-saver');
   // Click-through until the renderer reports the cursor is over the character.
   win.setIgnoreMouseEvents(true, { forward: true });
-  win.once('ready-to-show', () => win.showInactive());
+  if (!exportDir) win.once('ready-to-show', () => win.showInactive());
   if (!app.isPackaged) {
     win.webContents.on('console-message', (e) => console.log(`[renderer:${e.level}] ${e.message}`));
   }
-  win.loadURL('app://bundle/src/renderer/index.html');
+  win.loadURL(`app://bundle/src/renderer/index.html${exportDir ? '?export' : ''}`);
 }
 
 function tick(dt) {
@@ -138,6 +139,17 @@ ipcMain.on('mate:prompt', (_e, open) => {
   win.setIgnoreMouseEvents(!open, { forward: true });
   if (open) win.focus();
 });
+
+// Dev helper: `npm run export-template` writes the placeholder out as a parts set.
+ipcMain.on('mate:export-file', (_e, name, data) => {
+  if (!exportDir || !/^[\w-]+\.(png|json)$/.test(name)) return;
+  const dir = path.resolve(exportDir);
+  fs.mkdirSync(dir, { recursive: true });
+  const body = name.endsWith('.png') ? Buffer.from(data.split(',')[1], 'base64') : data;
+  fs.writeFileSync(path.join(dir, name), body);
+  console.log(`wrote ${path.join(dir, name)}`);
+});
+ipcMain.on('mate:export-done', () => app.quit());
 
 // Dev helper: `npm run snapshot` grabs the window after a few seconds and exits.
 // Add `-- --state=sleep` to force a state once the companion has landed.

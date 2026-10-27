@@ -9,7 +9,7 @@ npm install
 npm start
 ```
 
-With no Live2D files installed it uses a built-in vector chibi, so it works right away.
+It starts with a paper-doll character built from PNG parts (`assets/parts/template/`). To use your own art, including AI-generated art, follow [docs/PARTS.md](docs/PARTS.md).
 
 | Interaction | What happens |
 |---|---|
@@ -26,7 +26,7 @@ With no Live2D files installed it uses a built-in vector chibi, so it works righ
 1. Download the **Cubism SDK for Web** from live2d.com.
 2. Copy `Core/live2dcubismcore.min.js` → `assets/vendor/`.
 3. Copy `Samples/Resources/Hiyori/` → `assets/models/Hiyori/`.
-4. `npm start`. To use another model, edit `assets/character.json` (`model`, `height`, and the `motions` map from animation names to the model's motion groups).
+4. Set `"avatar": "live2d"` in `assets/character.json`, then `npm start`. To use another model, edit the `live2d` section (`model`, `height`, and the `motions` map from animation names to the model's motion groups).
 
 ## Develop
 
@@ -49,9 +49,9 @@ src/
   core/        behavior engine: brain.js (physics, needs, events), states.js (state table)
   main/        Electron main: window, tick loop, IPC, menu; tasks.js (tool registry)
   preload/     the IPC bridge exposed as window.mate
-  renderer/    Pixi stage, click-through, bubble/prompt; avatar/ (pose, placeholder, Live2D)
-assets/        character.json, models/, vendor/
-docs/          ARCHITECTURE.md: stack, asset pipeline, state machine, roadmap
+  renderer/    Pixi stage, click-through, bubble/prompt; avatar/ (pose, face, placeholder, parts, Live2D); dev/ (template exporter)
+assets/        character.json, parts/, models/, vendor/
+docs/          ARCHITECTURE.md: stack, asset pipeline, state machine, roadmap; PARTS.md: making a parts avatar
 ```
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the asset pipeline and design.

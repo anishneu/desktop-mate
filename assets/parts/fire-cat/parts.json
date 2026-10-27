@@ -1,0 +1,30 @@
+{
+  "height": 225,
+  "feet": [512, 916],
+  "pivots": {
+    "neck": [510, 590],
+    "tail": [614, 798],
+    "flame": [507, 398]
+  },
+  "parts": {
+    "tail": "tail.png",
+    "torso": "torso.png",
+    "head": "head.png",
+    "flame": "flame.png"
+  },
+  "face": {
+    "mode": "sprites",
+    "eyes": {
+      "open": "eyes_open.png",
+      "closed": "eyes_closed.png",
+      "happy": "eyes_happy.png"
+    },
+    "mouth": {
+      "closed": "mouth_closed.png",
+      "smile": "mouth_closed.png",
+      "open": "mouth_open.png",
+      "wide": "mouth_wide.png"
+    }
+  },
+  "facesLeft": false
+}

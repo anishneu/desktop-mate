@@ -1,10 +1,11 @@
 {
   "name": "Mate",
+  "avatar": "parts",
+  "parts": "/assets/parts/fire-cat/parts.json",
   "window": { "width": 300, "height": 400 },
-  "hitbox": { "width": 124, "height": 214 },
+  "hitbox": { "width": 150, "height": 214 },
   "tuning": {},
   "live2d": {
-    "enabled": true,
     "core": "/assets/vendor/live2dcubismcore.min.js",
     "model": "/assets/models/Hiyori/Hiyori.model3.json",
     "height": 230,
