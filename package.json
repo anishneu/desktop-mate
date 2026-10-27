@@ -7,7 +7,29 @@
   "scripts": {
     "start": "electron .",
     "snapshot": "electron . --snapshot=snapshot.png",
-    "test": "node --test test/"
+    "test": "node --test test/",
+    "dist": "electron-builder --win --publish never"
+  },
+  "build": {
+    "appId": "com.anishkuila.desktopmate",
+    "productName": "Desktop Mate",
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "nsis": {
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "${productName}-Portable-${version}.${ext}"
+    }
   },
   "author": "Anish Kuila",
   "license": "MIT",
@@ -16,6 +38,7 @@
     "pixi.js": "^6.5.10"
   },
   "devDependencies": {
-    "electron": "^41.7.1"
+    "electron": "^41.7.1",
+    "electron-builder": "^26.18.0"
   }
 }

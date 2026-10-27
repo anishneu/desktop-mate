@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    env:
+      # The tests only exercise the behavior engine and task parser; no Electron binary needed.
+      ELECTRON_SKIP_BINARY_DOWNLOAD: 1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Syntax check
+        shell: bash
+        run: find src test -name '*.js' -print0 | xargs -0 -n1 node --check
+      - run: npm test

@@ -38,6 +38,10 @@ npm test
 npm run snapshot -- --state=sleep
 ```
 
+`npm run dist` builds a Windows installer and portable exe into `dist/`.
+
+**CI/CD:** GitHub Actions runs a syntax check and the tests on Ubuntu and Windows for every push to `main`/`develop` and every PR (`.github/workflows/ci.yml`). Pushing a tag like `v0.2.0` builds the Windows installer and portable exe and attaches them to a GitHub release (`.github/workflows/release.yml`).
+
 The tests cover the behavior engine and the task parser. `snapshot` launches the app, optionally forces a state after landing, saves `snapshot.png`, and quits.
 
 ```
