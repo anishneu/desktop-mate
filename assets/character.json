@@ -1,0 +1,18 @@
+{
+  "name": "Mate",
+  "window": { "width": 300, "height": 400 },
+  "hitbox": { "width": 124, "height": 214 },
+  "tuning": {},
+  "live2d": {
+    "enabled": true,
+    "core": "/assets/vendor/live2dcubismcore.min.js",
+    "model": "/assets/models/Hiyori/Hiyori.model3.json",
+    "height": 230,
+    "offsetY": 0,
+    "motions": {
+      "idle": { "group": "Idle" },
+      "happy": { "group": "TapBody" },
+      "startled": { "group": "TapBody" }
+    }
+  }
+}
