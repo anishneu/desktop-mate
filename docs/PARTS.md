@@ -2,7 +2,7 @@
 
 A parts avatar is a paper doll: one character image cut into a few PNG layers. The app rotates the layers at their joints with the same procedural animations as the built-in chibi, so you never draw animation frames.
 
-`assets/parts/template/` is a complete working example (the built-in chibi exported as parts). Open `GUIDE.png` in it to see every joint, and copy the folder to start your own. `assets/parts/fire-cat/` is a second example: a single AI image cut into a head, body, tail and flame, with blank-face eye and mouth variants (no arms or legs).
+`assets/parts/template/` is a complete working example (the built-in chibi exported as parts). Open `GUIDE.png` in it to see every joint, and copy the folder to start your own. `assets/parts/fire-cat/` is a second example: an AI image cut into a head, body, tail and flame with eye and mouth variants, plus a side-view walk drawing with four swinging legs and a curled-up sleep drawing (see step 6).
 
 ## 1. Generate the character
 
@@ -100,3 +100,22 @@ To regenerate the template folder from the built-in chibi:
 ```bash
 npm run export-template
 ```
+
+## 6. Extra drawings for some animations (poses)
+
+One front-facing image can't walk convincingly or curl up to sleep. Generate more drawings of the same character (upload the first image and ask for "the same character walking, side view" or "curled up asleep") and list them under `poses` in `parts.json`. Each pose is a rig of its own with the same fields as the top level (`height`, `feet`, `pivots`, `parts`, optional `face`, `facesLeft`), plus:
+
+```json
+"poses": [
+  { "anims": ["walk", "run"], "quadruped": true, "height": 220, "feet": [478, 891],
+    "pivots": { "hipLeft": [290, 775], "shoulderLeft": [610, 770], "tail": [335, 612] },
+    "parts": { "torso": "walk_body.png", "legLeft": "walk_legLeft.png", "armLeft": "walk_armLeft.png", "tail": "walk_tail.png" } },
+  { "anims": ["sleep"], "height": 179, "feet": [512, 840], "parts": { "torso": "sleep_body.png" } }
+]
+```
+
+- **`anims`**: the animations that show this drawing instead of the main one: `idle`, `walk`, `run`, `sit`, `yawn`, `sleep`, `climb`, `cling`, `fall`, `land`, `dragged`, `startled`, `happy` or `talk`.
+- **`height`**: pick it so the character looks the same size as the main drawing, not necessarily the same height (a sleeping cat is shorter).
+- **`quadruped`**: for four-legged side views. `legLeft`/`legRight` are the back legs and `armLeft`/`armRight` the front legs; all four go behind the body and swing in a diagonal gait. Cut each leg straight across at the knee, put its pivot on that cut line, and leave about 40 px of the leg above the cut (hidden behind the body) so a swing never opens a gap.
+- A side view faces right unless `facesLeft` is set; the app mirrors it when walking left.
+

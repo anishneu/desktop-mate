@@ -26,5 +26,42 @@
       "wide": "mouth_wide.png"
     }
   },
-  "facesLeft": false
+  "facesLeft": false,
+  "poses": [
+    {
+      "anims": ["walk", "run"],
+      "height": 220,
+      "feet": [478, 891],
+      "quadruped": true,
+      "pivots": {
+        "hipLeft": [290, 775],
+        "hipRight": [445, 770],
+        "shoulderLeft": [610, 770],
+        "shoulderRight": [720, 770],
+        "tail": [335, 612],
+        "flame": [840, 380]
+      },
+      "parts": {
+        "legLeft": "walk_legLeft.png",
+        "legRight": "walk_legRight.png",
+        "armLeft": "walk_armLeft.png",
+        "armRight": "walk_armRight.png",
+        "tail": "walk_tail.png",
+        "torso": "walk_body.png",
+        "flame": "walk_flame.png"
+      }
+    },
+    {
+      "anims": ["sleep"],
+      "height": 179,
+      "feet": [512, 840],
+      "pivots": {
+        "flame": [395, 470]
+      },
+      "parts": {
+        "torso": "sleep_body.png",
+        "flame": "sleep_flame.png"
+      }
+    }
+  ]
 }
