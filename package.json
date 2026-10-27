@@ -1,0 +1,21 @@
+{
+  "name": "desktop-mate",
+  "version": "0.1.0",
+  "description": "Animated anime/Live2D desktop companion that wanders, climbs screen edges, reacts to the cursor and runs small tasks.",
+  "main": "src/main/main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "snapshot": "electron . --snapshot=snapshot.png",
+    "test": "node --test test/"
+  },
+  "author": "Anish Kuila",
+  "license": "MIT",
+  "dependencies": {
+    "pixi-live2d-display": "^0.4.0",
+    "pixi.js": "^6.5.10"
+  },
+  "devDependencies": {
+    "electron": "^41.7.1"
+  }
+}

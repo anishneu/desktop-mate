@@ -1,0 +1,60 @@
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+  user-select: none;
+  font: 13px/1.4 "Segoe UI", system-ui, sans-serif;
+}
+
+#stage canvas { display: block; }
+
+#bubble, #prompt {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+}
+
+#bubble {
+  max-width: 250px;
+  width: max-content;
+  padding: 8px 12px;
+  color: #3b2a4a;
+  background: #fff;
+  border: 2px solid #d9ccff;
+  border-radius: 14px;
+  box-shadow: 0 3px 10px rgba(60, 40, 90, 0.18);
+  animation: pop 160ms ease-out;
+}
+
+#bubble::after {
+  content: "";
+  position: absolute;
+  bottom: -9px;
+  left: 50%;
+  margin-left: -8px;
+  border: 8px solid transparent;
+  border-top-color: #d9ccff;
+  border-bottom: 0;
+}
+
+#prompt-input {
+  width: 240px;
+  padding: 8px 12px;
+  color: #3b2a4a;
+  background: #fff;
+  border: 2px solid #8a74d6;
+  border-radius: 14px;
+  outline: none;
+  font: inherit;
+  box-shadow: 0 3px 10px rgba(60, 40, 90, 0.25);
+}
+
+[hidden] { display: none !important; }
+
+@keyframes pop {
+  from { transform: translateX(-50%) scale(0.8); opacity: 0; }
+  to { transform: translateX(-50%) scale(1); opacity: 1; }
+}

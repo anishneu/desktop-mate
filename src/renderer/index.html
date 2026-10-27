@@ -1,0 +1,22 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <!-- Pixi 6 compiles shader uniform syncs with new Function, and the Cubism core uses wasm. -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="bubble" hidden><span id="bubble-text"></span></div>
+  <form id="prompt" hidden><input id="prompt-input" autocomplete="off" spellcheck="false" placeholder="Ask me something… (try “help”)"></form>
+  <div id="stage"></div>
+
+  <script src="../../node_modules/pixi.js/dist/browser/pixi.min.js"></script>
+  <script src="avatar/pose.js"></script>
+  <script src="avatar/fx.js"></script>
+  <script src="avatar/placeholder-avatar.js"></script>
+  <script src="avatar/live2d-avatar.js"></script>
+  <script src="renderer.js"></script>
+</body>
+</html>

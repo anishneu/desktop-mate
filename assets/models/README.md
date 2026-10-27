@@ -1,0 +1,1 @@
+Put Live2D models here, one folder each (e.g. Hiyori/Hiyori.model3.json), and point assets/character.json at the model3.json. Model folders are git-ignored; check each model's license before shipping it.

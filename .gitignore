@@ -1,0 +1,8 @@
+node_modules/
+dist/
+out/
+snapshot.png
+
+# Third-party Live2D runtime and models have their own licenses; keep them out of git.
+assets/vendor/*.js
+assets/models/*/
