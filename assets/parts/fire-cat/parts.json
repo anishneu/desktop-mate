@@ -1,0 +1,209 @@
+{
+  "height": 225,
+  "feet": [512, 916],
+  "pivots": {
+    "neck": [510, 590],
+    "tail": [614, 798],
+    "flame": [507, 398]
+  },
+  "parts": {
+    "tail": "tail.png",
+    "torso": "torso.png",
+    "head": "head.png",
+    "flame": "flame.png"
+  },
+  "face": {
+    "mode": "sprites",
+    "eyes": {
+      "open": "eyes_open.png",
+      "closed": "eyes_closed.png",
+      "happy": "eyes_happy.png"
+    },
+    "mouth": {
+      "closed": "mouth_closed.png",
+      "smile": "mouth_closed.png",
+      "open": "mouth_open.png",
+      "wide": "mouth_wide.png"
+    }
+  },
+  "facesLeft": false,
+  "poses": [
+    {
+      "anims": ["walk"],
+      "height": 220,
+      "feet": [478, 891],
+      "quadruped": true,
+      "pivots": {
+        "hipLeft": [290, 775],
+        "hipRight": [445, 770],
+        "shoulderLeft": [610, 770],
+        "shoulderRight": [720, 770],
+        "tail": [335, 612],
+        "flame": [840, 380]
+      },
+      "parts": {
+        "legLeft": "walk_legLeft.png",
+        "legRight": "walk_legRight.png",
+        "armLeft": "walk_armLeft.png",
+        "armRight": "walk_armRight.png",
+        "tail": "walk_tail.png",
+        "torso": "walk_body.png",
+        "flame": "walk_flame.png"
+      }
+    },
+    {
+      "anims": ["yawn", "sleep"],
+      "height": 179,
+      "feet": [512, 840],
+      "pivots": {
+        "flame": [395, 470]
+      },
+      "parts": {
+        "torso": "sleep_body.png",
+        "open": "yawn_open.png",
+        "flame": "sleep_flame.png"
+      },
+      "still": true
+    },
+    {
+      "anims": ["fall"],
+      "height": 220,
+      "feet": [516, 953],
+      "parts": {
+        "torso": "fall_body.png",
+        "flame": "fall_flame.png"
+      },
+      "pivots": {
+        "flame": [513, 597]
+      }
+    },
+    {
+      "anims": ["descend"],
+      "height": 245,
+      "feet": [441, 923],
+      "parts": {
+        "torso": "descend_body.png"
+      }
+    },
+    {
+      "anims": ["wake"],
+      "height": 218,
+      "feet": [516, 949],
+      "parts": {
+        "tail": "wake_tail.png",
+        "torso": "wake_body.png",
+        "flame": "wake_flame.png"
+      },
+      "pivots": {
+        "tail": [800, 335],
+        "flame": [466, 603]
+      }
+    },
+    {
+      "transition": ["walk", "run"],
+      "height": 237,
+      "feet": [501, 919],
+      "parts": {
+        "torso": "turn_body.png",
+        "flame": "turn_flame.png"
+      },
+      "pivots": {
+        "flame": [797, 339]
+      }
+    },
+    {
+      "anims": ["greet"],
+      "height": 212,
+      "feet": [511, 937],
+      "parts": {
+        "armRight": "greet_armRight.png",
+        "tail": "greet_tail.png",
+        "torso": "greet_body.png",
+        "flame": "greet_flame.png"
+      },
+      "pivots": {
+        "shoulderRight": [712, 600],
+        "tail": [416, 830],
+        "flame": [503, 391]
+      }
+    },
+    {
+      "anims": ["land"],
+      "height": 229,
+      "feet": [512, 949],
+      "parts": {
+        "torso": "land_body.png",
+        "flame": "land_flame.png"
+      },
+      "pivots": {
+        "flame": [466, 602]
+      }
+    },
+    {
+      "anims": ["run"],
+      "height": 172,
+      "feet": [508, 800],
+      "parts": {
+        "torso": "run_body.png"
+      }
+    },
+    {
+      "anims": ["startled"],
+      "height": 236,
+      "feet": [513, 964],
+      "parts": {
+        "torso": "startled_body.png",
+        "flame": "startled_flame.png"
+      },
+      "pivots": {
+        "flame": [872, 498]
+      }
+    },
+    {
+      "anims": ["dragged"],
+      "height": 287,
+      "feet": [511, 973],
+      "parts": {
+        "torso": "dragged_body.png",
+        "flame": "dragged_flame.png"
+      },
+      "pivots": {
+        "flame": [507, 278]
+      }
+    },
+    {
+      "anims": ["cling"],
+      "height": 279,
+      "feet": [453, 981],
+      "parts": {
+        "tail": "cling_tail.png",
+        "torso": "cling_body.png",
+        "flame": "cling_flame.png"
+      },
+      "pivots": {
+        "tail": [540, 760],
+        "flame": [527, 222]
+      }
+    },
+    {
+      "anims": ["climb"],
+      "height": 276,
+      "feet": [445, 990],
+      "parts": {
+        "armLeft": "climb_armLeft.png",
+        "legLeft": "climb_legLeft.png",
+        "legRight": "climb_legRight.png",
+        "tail": "climb_tail.png",
+        "torso": "climb_body.png",
+        "flame": "climb_flame.png"
+      },
+      "pivots": {
+        "shoulderLeft": [630, 440],
+        "hipLeft": [650, 640],
+        "hipRight": [600, 790],
+        "tail": [510, 740],
+        "flame": [630, 243]
+      }
+    }
+  ]
+}

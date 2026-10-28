@@ -7,7 +7,8 @@
 | Shell | **Electron** | Transparent, frameless, always-on-top windows with click-through work on Windows and macOS. Node gives the task layer full OS access. |
 | Rendering | **PixiJS 6 + pixi-live2d-display 0.4** | The most mature web Live2D runtime: motions, expressions, physics, eye-tracking (`focus`). Pixi 6 is the version it targets. |
 | Character | **Live2D Cubism 4/5 model** (`.moc3` + `model3.json`) | Anime look, smooth deformation, cheap at runtime. |
-| Fallback | Vector placeholder (`placeholder-avatar.js`) | The app runs and is testable before any art exists. |
+| No-rig option | Parts avatar (`parts-avatar.js`): PNG layers on pivots, driven by `pose.js` | Works with AI-generated art and needs no rigging software. See [PARTS.md](PARTS.md). |
+| Fallback | Vector placeholder (`placeholder-avatar.js`) | Used whenever the chosen avatar fails to load. |
 
 Alternatives worth knowing: **Tauri** (much smaller binary; same web renderer code, Rust shell — a good port target later), **Unity + Cubism SDK for Unity** (if you want 3D/VRM or heavy effects), **Spine** (if you want true full-body walk cycles instead of Live2D's deformation-based animation).
 
@@ -72,6 +73,7 @@ stateDiagram-v2
   toWall --> climb --> cling
   cling --> climb
   cling --> fall : let go
+  cling --> descend --> idle : climb down
   sit --> yawn --> sleep --> wake --> idle
   idle --> approach : cursor resting nearby
   approach --> happy

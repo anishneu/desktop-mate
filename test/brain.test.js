@@ -79,16 +79,21 @@ test('drag and throw: follows the cursor, then falls with its velocity', () => {
   assert.equal(b.pos.y, b.floorY);
 });
 
-test('a click on the sleeping companion wakes it', () => {
+test('going to sleep yawns first, and a click on the sleeper wakes it with a stretch', () => {
   const b = make();
   landed(b);
   b.send('force', { state: 'sleep' });
   b.update(DT, { area: AREA, cursor: FAR });
+  assert.equal(b.state, 'yawn');
+  run(b, 3);
   assert.equal(b.state, 'sleep');
   b.send('drag-start');
   b.send('drag-end');
   b.update(DT, { area: AREA, cursor: FAR });
   assert.equal(b.state, 'wake');
+  assert.equal(b.anim, 'wake');
+  run(b, 3);
+  assert.equal(b.state, 'idle');
 });
 
 test('a fast cursor swipe nearby startles it', () => {
@@ -134,4 +139,50 @@ test('talks only when standing on the floor', () => {
   assert.equal(b.state, 'talk');
   run(b, 2.1);
   assert.notEqual(b.state, 'talk');
+});
+
+test('climbs down a wall head first and turns away from it', () => {
+  const b = make(3);
+  landed(b);
+  b.pos.x = b.rightX;
+  b.facing = 1;
+  b.send('force', { state: 'cling' });
+  run(b, DT);
+  b.pos.y = b.floorY - 300;
+  b.enter('descend');
+  run(b, 0.5);
+  assert.equal(b.state, 'descend');
+  assert.ok(b.pos.y > b.floorY - 300 && b.pos.y < b.floorY);
+  assert.equal(b.pos.x, b.rightX);
+  run(b, 5);
+  assert.equal(b.pos.y, b.floorY);
+  assert.equal(b.facing, -1);
+  assert.notEqual(b.state, 'descend');
+});
+
+test('waves hi once after the first landing, not after later ones', () => {
+  const b = make(5);
+  const seen = [];
+  for (let t = 0; t < 4; t += DT) {
+    b.update(DT, { area: AREA, cursor: FAR });
+    if (seen.at(-1) !== b.state) seen.push(b.state);
+  }
+  assert.deepEqual(seen.slice(0, 3), ['fall', 'land', 'greet']);
+  b.vel = { x: 0, y: 0 };
+  b.pos.y = b.floorY - 300;
+  b.enter('fall');
+  run(b, 1);
+  assert.notEqual(b.state, 'greet');
+});
+
+test('a click on the standing companion makes it happy', () => {
+  const b = make(2);
+  run(b, 6);
+  const c = { x: b.pos.x + 150, y: b.pos.y + 300 };
+  run(b, 0.1, c);
+  b.send('drag-start');
+  run(b, DT, c);
+  b.send('drag-end');
+  run(b, DT, c);
+  assert.equal(b.state, 'happy');
 });

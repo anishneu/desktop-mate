@@ -44,7 +44,8 @@
         p.armL = p.armR = 0.5;
         p.bob = breathe;
         break;
-      case 'yawn': {
+      case 'yawn':
+      case 'wake': {
         const k = Math.sin(Math.PI * clamp(at / 2.4, 0, 1));
         p.mouth = k;
         p.eyes = 1 - k * 0.9;
@@ -65,7 +66,8 @@
         p.bob = Math.sin(T * 1.2) * 1.5;
         p.fx = 'zzz';
         break;
-      case 'climb': {
+      case 'climb':
+      case 'descend': {
         const w = Math.sin(T * 7);
         p.armL = 2.7 + w * 0.35;
         p.armR = 2.7 - w * 0.35;
@@ -119,6 +121,13 @@
         p.fx = '!';
         break;
       }
+      case 'greet':
+        p.bob = -Math.abs(Math.sin(T * 4.5)) * 3;
+        p.armR = 2.4 + Math.sin(T * 9) * 0.4;
+        p.mood = 'happy';
+        p.mouth = 0.35;
+        p.fx = 'hi!';
+        break;
       case 'happy':
         p.bob = -Math.abs(Math.sin(T * 7)) * 12;
         p.armL = p.armR = 2.2 + Math.sin(T * 7) * 0.2;

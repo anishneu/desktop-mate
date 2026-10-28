@@ -16,6 +16,9 @@ const { width: W, height: H } = character.window;
 const TICK_MS = 1000 / 60;
 const PROMPT_SHORTCUT = 'Ctrl+Alt+M';
 const snapshotArg = process.argv.find((a) => a.startsWith('--snapshot='));
+// Dev only: `--anim=climb` shows that animation whatever the state, to check its art.
+const forcedAnim = process.argv.find((a) => a.startsWith('--anim='))?.slice('--anim='.length);
+const exportDir = process.argv.find((a) => a.startsWith('--export-template='))?.slice('--export-template='.length);
 
 let win;
 let brain;
@@ -67,11 +70,11 @@ function createWindow() {
   win.setAlwaysOnTop(true, 'screen-saver');
   // Click-through until the renderer reports the cursor is over the character.
   win.setIgnoreMouseEvents(true, { forward: true });
-  win.once('ready-to-show', () => win.showInactive());
+  if (!exportDir) win.once('ready-to-show', () => win.showInactive());
   if (!app.isPackaged) {
     win.webContents.on('console-message', (e) => console.log(`[renderer:${e.level}] ${e.message}`));
   }
-  win.loadURL('app://bundle/src/renderer/index.html');
+  win.loadURL(`app://bundle/src/renderer/index.html${exportDir ? '?export' : ''}`);
 }
 
 function tick(dt) {
@@ -87,7 +90,7 @@ function tick(dt) {
     win.setBounds({ x: s.x, y: s.y, width: W, height: H });
     lastPos = key;
   }
-  win.webContents.send('mate:tick', { ...s, cursor: { x: cursor.x - s.x, y: cursor.y - s.y } });
+  win.webContents.send('mate:tick', { ...s, ...(forcedAnim && { anim: forcedAnim }), cursor: { x: cursor.x - s.x, y: cursor.y - s.y } });
 }
 
 function startLoop() {
@@ -139,17 +142,31 @@ ipcMain.on('mate:prompt', (_e, open) => {
   if (open) win.focus();
 });
 
+// Dev helper: `npm run export-template` writes the placeholder out as a parts set.
+ipcMain.on('mate:export-file', (_e, name, data) => {
+  if (!exportDir || !/^[\w-]+\.(png|json)$/.test(name)) return;
+  const dir = path.resolve(exportDir);
+  fs.mkdirSync(dir, { recursive: true });
+  const body = name.endsWith('.png') ? Buffer.from(data.split(',')[1], 'base64') : data;
+  fs.writeFileSync(path.join(dir, name), body);
+  console.log(`wrote ${path.join(dir, name)}`);
+});
+ipcMain.on('mate:export-done', () => app.quit());
+
 // Dev helper: `npm run snapshot` grabs the window after a few seconds and exits.
-// Add `-- --state=sleep` to force a state once the companion has landed.
+// Add `-- --state=sleep` to force a state once the companion has landed, and
+// `--delay=300` (ms after forcing) to catch short states like land or startled.
+// `--anim=cling` shows an animation's art without the state (e.g. on the floor).
 function captureSnapshot(file) {
-  const state = process.argv.find((a) => a.startsWith('--state='))?.slice('--state='.length);
+  const arg = (name) => process.argv.find((a) => a.startsWith(`--${name}=`))?.slice(name.length + 3);
+  const state = arg('state');
   if (state) setTimeout(() => brain.send('force', { state }), 3000);
   setTimeout(async () => {
     const image = await win.webContents.capturePage();
     fs.writeFileSync(path.resolve(file), image.toPNG());
     console.log(`snapshot written to ${path.resolve(file)} (state: ${brain.state})`);
     app.quit();
-  }, 5000);
+  }, 3000 + Number(arg('delay') || 2000));
 }
 
 if (!app.requestSingleInstanceLock()) {

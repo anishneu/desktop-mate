@@ -7,6 +7,7 @@
   "scripts": {
     "start": "electron .",
     "snapshot": "electron . --snapshot=snapshot.png",
+    "export-template": "electron . --export-template=assets/parts/template",
     "test": "node --test test/",
     "dist": "electron-builder --win --publish never"
   },
@@ -16,6 +17,7 @@
     "files": [
       "src/**/*",
       "assets/**/*",
+      "!assets/parts/**/source*.jpg",
       "package.json"
     ],
     "win": {
