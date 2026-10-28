@@ -8,6 +8,7 @@ const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 const { app, BrowserWindow, Menu, globalShortcut, ipcMain, net, protocol, screen, shell } = require('electron');
 const { Brain } = require('../core/brain');
+const { STATES } = require('../core/states');
 const tasks = require('./tasks');
 
 const ROOT = path.resolve(__dirname, '..', '..');
@@ -157,13 +158,30 @@ ipcMain.on('mate:export-done', () => app.quit());
 // Add `-- --state=sleep` to force a state once the companion has landed, and
 // `--delay=300` (ms after forcing) to catch short states like land or startled.
 // `--anim=cling` shows an animation's art without the state (e.g. on the floor).
+// Wall states (climb, cling, descend) are forced on the right-hand wall.
 function captureSnapshot(file) {
   const arg = (name) => process.argv.find((a) => a.startsWith(`--${name}=`))?.slice(name.length + 3);
   const state = arg('state');
-  if (state) setTimeout(() => brain.send('force', { state }), 3000);
+  if (state) {
+    setTimeout(() => {
+      if (STATES[state]?.surface === 'wall') {
+        brain.pos.x = brain.rightX;
+        brain.pos.y = brain.floorY - 260;
+        brain.facing = 1;
+      }
+      brain.send('force', { state });
+    }, 3000);
+  }
+  // `--frames=12 --every=100` saves a burst (name_00.png, name_01.png, …) to check motion.
+  const frames = Number(arg('frames') || 1);
+  const every = Number(arg('every') || 100);
   setTimeout(async () => {
-    const image = await win.webContents.capturePage();
-    fs.writeFileSync(path.resolve(file), image.toPNG());
+    for (let i = 0; i < frames; i++) {
+      const image = await win.webContents.capturePage();
+      const out = frames > 1 ? file.replace(/(\.png)?$/, `_${String(i).padStart(2, '0')}.png`) : file;
+      fs.writeFileSync(path.resolve(out), image.toPNG());
+      if (i < frames - 1) await new Promise((r) => setTimeout(r, every));
+    }
     console.log(`snapshot written to ${path.resolve(file)} (state: ${brain.state})`);
     app.quit();
   }, 3000 + Number(arg('delay') || 2000));

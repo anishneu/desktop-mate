@@ -13,7 +13,9 @@ const DEFAULT_TUNING = {
   runSpeed: 260,
   climbSpeed: 55,
   energyDrain: 1 / 420, // full → empty in ~7 min awake
-  energyRecover: 1 / 45,
+  energyRecover: 1 / 200, // empty → full in ~3 min asleep
+  sleepMin: 60, // s: even a nap when not tired lasts 1–2.5 min
+  sleepMax: 150,
   startleSpeed: 2200, // cursor px/s that counts as a sudden swipe
   startleRadius: 160,
   curiosityRadius: 480,

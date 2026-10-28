@@ -70,19 +70,13 @@
       "height": 220,
       "feet": [516, 953],
       "parts": {
+        "tail": "fall_tail.png",
         "torso": "fall_body.png",
         "flame": "fall_flame.png"
       },
       "pivots": {
+        "tail": [525, 268],
         "flame": [513, 597]
-      }
-    },
-    {
-      "anims": ["descend"],
-      "height": 245,
-      "feet": [441, 923],
-      "parts": {
-        "torso": "descend_body.png"
       }
     },
     {
@@ -101,7 +95,8 @@
     },
     {
       "transition": ["walk", "run"],
-      "height": 237,
+      "lean": 0,
+      "height": 221,
       "feet": [501, 919],
       "parts": {
         "torso": "turn_body.png",
@@ -141,7 +136,8 @@
     },
     {
       "anims": ["run"],
-      "height": 172,
+      "lean": 0.3,
+      "height": 143,
       "feet": [508, 800],
       "parts": {
         "torso": "run_body.png"
@@ -181,12 +177,12 @@
         "flame": "cling_flame.png"
       },
       "pivots": {
-        "tail": [540, 760],
+        "tail": [520, 730],
         "flame": [527, 222]
       }
     },
     {
-      "anims": ["climb"],
+      "anims": ["climb", "descend"],
       "height": 276,
       "feet": [445, 990],
       "parts": {
@@ -198,9 +194,9 @@
         "flame": "climb_flame.png"
       },
       "pivots": {
-        "shoulderLeft": [630, 440],
-        "hipLeft": [650, 640],
-        "hipRight": [600, 790],
+        "shoulderLeft": [625, 420],
+        "hipLeft": [652, 700],
+        "hipRight": [615, 760],
         "tail": [510, 740],
         "flame": [630, 243]
       }

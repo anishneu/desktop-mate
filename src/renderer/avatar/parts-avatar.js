@@ -13,15 +13,17 @@
   // Tail sway [speed rad/s, amplitude rad] by animation; otherwise mood "happy" wags.
   const TAIL = {
     walk: [5, 0.14], run: [9, 0.2], sleep: [0.8, 0.04], sit: [1.2, 0.06], yawn: [1, 0.05],
-    fall: [12, 0.25], dragged: [12, 0.22], startled: [14, 0.25], climb: [4, 0.12], cling: [2, 0.1], greet: [3, 0.07], wake: [2.5, 0.12],
+    fall: [7, 0.3], dragged: [12, 0.22], startled: [14, 0.25], climb: [4, 0.12], descend: [4, 0.12], cling: [2, 0.1], greet: [3, 0.07], wake: [2.5, 0.12],
   };
   const QUADRUPED_SWING = 0.6; // four legs swing less than two
   const TURN_TIME = 0.18; // seconds a transition pose shows
+  const FADE_TIME = 0.12; // seconds one drawing dissolves into the next
   // Limb swing for pose drawings (the main drawing follows pose.js instead):
   // [speed rad/s, {limb: amplitude rad}, {limb: rest offset rad}]; limbs alternate
   // by the amplitude's sign.
   const GAIT = {
-    climb: [7, { armL: 0.22, legL: -0.28, legR: 0.28 }],
+    climb: [7, { armL: 0.14, legL: -0.18, legR: 0.18 }],
+    descend: [6, { armL: 0.14, legL: -0.18, legR: 0.18 }], // backwards, with the climb drawing
     cling: [2, { armL: 0.04, legL: 0.06, legR: -0.06 }],
     greet: [9, { armR: 0.26 }, { armR: 0.12 }], // waves outward, never behind the head
   };
@@ -30,12 +32,12 @@
   const sin = Math.sin;
   const MOTION = {
     climb: (T) => ({ y: -Math.abs(sin(T * 7)) * 4, rot: sin(T * 7) * 0.03 }),
-    descend: (T) => ({ y: Math.abs(sin(T * 8)) * 3, rot: sin(T * 8) * 0.04 }),
+    descend: (T) => ({ y: Math.abs(sin(T * 6)) * 4, rot: sin(T * 6) * 0.03 }),
     cling: (T) => ({ sy: 1 + sin(T * 2.2) * 0.015, rot: sin(T * 1.1) * 0.025 }),
-    fall: (T) => ({ rot: sin(T * 13) * 0.14, sx: 1 + sin(T * 9) * 0.04, sy: 1 - sin(T * 9) * 0.04 }),
+    fall: (T) => ({ rot: sin(T * 4) * 0.06, y: sin(T * 7) * 1.5, sy: 1 + sin(T * 7) * 0.015 }),
     dragged: (T, p, vx) => ({ top: true, rot: Math.max(-0.5, Math.min(0.5, -vx * 0.0005)) + sin(T * 2.6) * 0.07 }),
     startled: (T) => ({ x: sin(T * 55) * 1.5, sy: 1 + Math.abs(sin(T * 12)) * 0.03 }),
-    run: (T) => ({ y: -Math.abs(sin(T * 11)) * 9, rot: sin(T * 11) * 0.07 }),
+    run: (T) => ({ y: -Math.abs(sin(T * 11)) * 9, rot: sin(T * 11) * 0.03 }),
     yawn: (T) => MOTION.sleep(T), // same breathing, so yawning into sleep is seamless
     wake: (T, p) => ({ sx: 1 + p.mouth * 0.04, sy: 1 - p.mouth * 0.03 }),
     sleep: (T) => ({ sx: 1 - sin(T * 1.2) * 0.01, sy: 1 + sin(T * 1.2) * 0.02 }),
@@ -111,6 +113,7 @@
       view: new PIXI.Container(),
       quadruped: !!spec.quadruped,
       still: !!spec.still,
+      lean: spec.lean ?? 1, // how much of the pose's lean to apply (a wide drawing needs less)
       facesLeft: !!spec.facesLeft,
       headTop: (top - feet[1]) * s,
       halfWidth: Math.max(...all.map((i) => Math.max(feet[0] - i.x, i.x + i.w - feet[0]))) * s * 0.8,
@@ -247,17 +250,32 @@
       this.prevAnim = s.anim;
       const rig = turn && this.T < turn.until ? turn.rig : this.byAnim[s.anim] || this.main;
       if (rig !== this.rig) {
-        this.rig.view.visible = false;
+        // The old drawing stays on top, frozen, and dissolves away over the new one.
+        if (this.fading) this.fading.view.visible = false;
+        this.fading = this.rig;
+        this.fadeT = 0;
+        this.body.setChildIndex(this.rig.view, this.body.children.length - 1);
         rig.view.visible = true;
+        rig.view.alpha = 1;
         this.rig = rig;
         this.faceKey = '';
+      }
+      if (this.fading) {
+        this.fadeT += dt;
+        const t = Math.min(1, this.fadeT / FADE_TIME);
+        this.fading.view.alpha = 1 - t;
+        if (t >= 1) {
+          this.fading.view.visible = false;
+          this.fading.view.alpha = 1;
+          this.fading = null;
+        }
       }
       const facing = (s.facing || 1) * (rig.facesLeft ? -1 : 1);
       this.root.scale.x = facing;
       // A `still` pose (curled up asleep) keeps its place: no bob, squash or lean.
       this.body.y = rig.still ? 0 : p.bob + p.sit * rig.sitDrop;
       this.body.scale.set(rig.still ? 1 : 2 - p.squash, rig.still ? 1 : p.squash);
-      this.body.rotation = rig.still ? 0 : p.lean;
+      this.body.rotation = rig.still ? 0 : p.lean * rig.lean;
       // Window speed, for the dangling swing.
       if (this.lastX !== null && dt > 0) this.vx += ((s.x - this.lastX) / dt - this.vx) * Math.min(1, dt * 8);
       this.lastX = s.x;

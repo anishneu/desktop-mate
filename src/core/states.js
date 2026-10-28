@@ -103,8 +103,9 @@ const STATES = {
   // Cursor reactions are handled specially while asleep (see Brain.react).
   sleep: {
     anim: 'sleep', surface: 'floor', interruptible: false,
+    enter(b) { b.data.until = b.rand(b.tuning.sleepMin, b.tuning.sleepMax); },
     update(b) {
-      if (b.energy >= 0.98 && b.stateTime > 20) return 'wake';
+      if (b.energy >= 0.98 && b.stateTime > b.data.until) return 'wake';
     },
   },
 

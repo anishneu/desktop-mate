@@ -50,8 +50,8 @@ Author: Anish Kuila
 
 **On launch** the cat drops in from the top of the screen, lands, and waves hello. From then on it lives on its own:
 
-- **Autonomous behavior:** it walks along the taskbar, sits, heads to a screen edge and climbs it, then hangs there for a while. It either climbs back down head first or lets go and falls.
-- **Getting tired:** an energy need drains while it's awake. As energy drops it yawns more often and eventually curls up to sleep. Going to sleep always plays the open-mouth yawn first, then the closed-eye sleep. When it's rested, or when you click it, it wakes with a long stretch.
+- **Autonomous behavior:** it walks along the taskbar, sits, heads to a screen edge and climbs it, then hangs there for a while. It either climbs back down backwards, the way real cats do, or lets go and falls.
+- **Getting tired:** an energy need drains while it's awake. As energy drops it yawns more often and eventually curls up to sleep for a few minutes. Going to sleep always plays the open-mouth yawn first, then the closed-eye sleep. When it's rested, or when you click it, it wakes with a long stretch.
 
 **It reacts to your cursor:**
 
@@ -69,7 +69,7 @@ Author: Anish Kuila
 
 - **Walking:** a side view whose four legs swing in a diagonal gait.
 - **Running:** a gallop.
-- **Climbing:** front paws and back legs alternate as it climbs.
+- **Climbing:** front paws and back legs alternate as it climbs, and step in reverse as it climbs down.
 - **Other poses:** startled, dangling, falling, landing, waving, yawning, sleeping and stretching each have their own drawing.
 - **Turning:** a three-quarter view flashes for a moment when it starts or stops walking, so it doesn't snap from facing you to side-on.
 
@@ -113,8 +113,8 @@ Counted directly from the codebase, not estimated:
 | Behavior states | 19 |
 | Animation names | 17 |
 | Avatar types | 3 (parts, Live2D, placeholder) |
-| AI-generated source images for the fire cat | 15 |
-| Pose drawings (per-animation rigs) | 12, plus 1 transition pose |
+| AI-generated source images for the fire cat | 15 (14 in use) |
+| Pose drawings (per-animation rigs) | 11, plus 1 transition pose |
 | PNG layers in the fire cat | 48 |
 | Cursor reactions | 4, plus click and drag/throw |
 | Task tools | 6 (`help`, `set_timer`, `get_time`, `open_url`, `web_search`, `behave`) |

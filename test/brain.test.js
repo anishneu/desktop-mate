@@ -186,3 +186,15 @@ test('a click on the standing companion makes it happy', () => {
   run(b, DT, c);
   assert.equal(b.state, 'happy');
 });
+
+test('a nap lasts at least a minute even when not tired', () => {
+  const b = make(4);
+  landed(b);
+  b.send('force', { state: 'sleep' });
+  run(b, 3); // the yawn
+  assert.equal(b.state, 'sleep');
+  run(b, 55);
+  assert.equal(b.state, 'sleep');
+  run(b, 120);
+  assert.notEqual(b.state, 'sleep');
+});
