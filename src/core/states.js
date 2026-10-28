@@ -9,6 +9,28 @@
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
+// Ballistic flight with gravity, air drag and wall bounces. Returns true on landing.
+function airborne(b, dt) {
+  const { vel, pos } = b;
+  vel.y += b.tuning.gravity * dt;
+  vel.x *= Math.pow(0.6, dt); // air drag
+  pos.x += vel.x * dt;
+  pos.y += vel.y * dt;
+  if (pos.x <= b.leftX || pos.x >= b.rightX) {
+    pos.x = clamp(pos.x, b.leftX, b.rightX);
+    vel.x *= -0.4;
+  }
+  if (pos.y < b.ceilingY) {
+    pos.y = b.ceilingY;
+    vel.y = Math.abs(vel.y) * 0.3;
+  }
+  if (Math.abs(vel.x) > 20) b.facing = Math.sign(vel.x);
+  if (pos.y < b.floorY) return false;
+  pos.y = b.floorY;
+  b.vel = { x: 0, y: 0 };
+  return true;
+}
+
 const STATES = {
   idle: {
     anim: 'idle', surface: 'floor', interruptible: true,
@@ -70,15 +92,41 @@ const STATES = {
   },
 
   // Climbing back down head first, then turning away from the wall.
+  // Climbing down head first for a short way, then leaping off.
   descend: {
     anim: 'descend', surface: 'wall', interruptible: true,
+    enter(b) { b.data.until = b.rand(1.2, 2.2); },
     update(b, dt) {
-      b.pos.y += b.tuning.climbSpeed * 1.6 * dt;
-      if (b.pos.y >= b.floorY) {
-        b.pos.y = b.floorY;
-        b.facing = -b.facing;
-        return 'idle';
-      }
+      b.pos.y += b.tuning.climbSpeed * 1.4 * dt;
+      if (b.stateTime > b.data.until || b.pos.y >= b.floorY - 40) return 'pounce';
+    },
+  },
+
+  // A planned jump away from the wall, unlike `fall`.
+  pounce: {
+    anim: 'pounce', surface: 'air', interruptible: false,
+    enter(b) {
+      b.facing = -b.facing;
+      b.vel = { x: b.facing * b.rand(300, 380), y: -b.rand(280, 360) };
+    },
+    update(b, dt) {
+      if (airborne(b, dt)) return 'touchdown';
+    },
+  },
+
+  // Landing on its feet from a pounce, then strolling on the same way.
+  touchdown: {
+    anim: 'touchdown', surface: 'floor', interruptible: false,
+    update(b) {
+      if (b.stateTime > 0.3) return 'stroll';
+    },
+  },
+
+  stroll: {
+    anim: 'walk', surface: 'floor', interruptible: true,
+    enter(b) { b.data.target = clamp(b.pos.x + b.facing * b.rand(90, 180), b.leftX, b.rightX); },
+    update(b, dt) {
+      if (b.walkToward(b.data.target, b.tuning.walkSpeed, dt)) return 'idle';
     },
   },
 
@@ -90,13 +138,27 @@ const STATES = {
     },
   },
 
+  // Lying down, drowsy, on the way to sleep.
+  liedown: {
+    anim: 'liedown', surface: 'floor', interruptible: false,
+    update(b) {
+      if (b.stateTime > 1.4) return 'curlYawn';
+    },
+  },
+
+  // A yawn while awake, standing. If it's very tired, it then goes to bed.
   yawn: {
     anim: 'yawn', surface: 'floor', interruptible: false,
     update(b) {
-      if (b.stateTime <= 2.6) return;
-      const sleep = b.sleepy || b.energy < 0.25;
-      b.sleepy = false;
-      return sleep ? 'sleep' : 'idle';
+      if (b.stateTime > 2.6) return b.energy < 0.25 && b.mayNap() ? b.bedtime() : 'idle';
+    },
+  },
+
+  // The bedtime yawn, curled up: always followed by sleep.
+  curlYawn: {
+    anim: 'curlYawn', surface: 'floor', interruptible: false,
+    update(b) {
+      if (b.stateTime > 2.6) return 'sleep';
     },
   },
 
@@ -109,11 +171,12 @@ const STATES = {
     },
   },
 
-  // Waking up: a long stretch.
+  // Waking up: a long stretch. It won't nap again for a while, even if woken early.
   wake: {
     anim: 'wake', surface: 'floor', interruptible: false,
+    enter(b) { b.cooldowns.nap = b.tuning.napCooldown; },
     update(b) {
-      if (b.stateTime > 2.6) return 'idle';
+      if (b.stateTime > 4.4) return 'idle'; // drowsy, get up, stretch, stand, sit up
     },
   },
 
@@ -169,7 +232,7 @@ const STATES = {
   land: {
     anim: 'land', surface: 'floor', interruptible: false,
     update(b) {
-      if (b.stateTime <= 0.35) return;
+      if (b.stateTime <= 0.6) return; // brace, then splat
       if (b.greeted) return 'idle';
       b.greeted = true; // the first landing after launch: say hi
       return 'greet';
@@ -199,25 +262,7 @@ const STATES = {
   fall: {
     anim: 'fall', surface: 'air', interruptible: false,
     update(b, dt) {
-      const { vel, pos } = b;
-      vel.y += b.tuning.gravity * dt;
-      vel.x *= Math.pow(0.6, dt); // air drag
-      pos.x += vel.x * dt;
-      pos.y += vel.y * dt;
-      if (pos.x <= b.leftX || pos.x >= b.rightX) {
-        pos.x = clamp(pos.x, b.leftX, b.rightX);
-        vel.x *= -0.4;
-      }
-      if (pos.y < b.ceilingY) {
-        pos.y = b.ceilingY;
-        vel.y = Math.abs(vel.y) * 0.3;
-      }
-      if (Math.abs(vel.x) > 20) b.facing = Math.sign(vel.x);
-      if (pos.y >= b.floorY) {
-        pos.y = b.floorY;
-        b.vel = { x: 0, y: 0 };
-        return 'land';
-      }
+      if (airborne(b, dt)) return 'land';
     },
   },
 };

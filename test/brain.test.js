@@ -53,7 +53,7 @@ test('stays inside the work area and lives a full day cycle', () => {
     assert.ok(b.pos.x >= b.leftX && b.pos.x <= b.rightX, `x out of bounds in ${b.state}`);
     assert.ok(b.pos.y >= b.ceilingY && b.pos.y <= b.floorY, `y out of bounds in ${b.state}`);
   }
-  for (const s of ['walk', 'sit', 'climb', 'cling', 'yawn', 'sleep']) assert.ok(seen.has(s), `never entered ${s}`);
+  for (const s of ['walk', 'sit', 'climb', 'cling', 'yawn', 'liedown', 'sleep']) assert.ok(seen.has(s), `never entered ${s}`);
 });
 
 test('drag and throw: follows the cursor, then falls with its velocity', () => {
@@ -79,12 +79,14 @@ test('drag and throw: follows the cursor, then falls with its velocity', () => {
   assert.equal(b.pos.y, b.floorY);
 });
 
-test('going to sleep yawns first, and a click on the sleeper wakes it with a stretch', () => {
+test('going to sleep lies down and yawns first, and a click on the sleeper wakes it with a stretch', () => {
   const b = make();
   landed(b);
   b.send('force', { state: 'sleep' });
   b.update(DT, { area: AREA, cursor: FAR });
-  assert.equal(b.state, 'yawn');
+  assert.equal(b.state, 'liedown');
+  run(b, 1.5);
+  assert.equal(b.state, 'curlYawn');
   run(b, 3);
   assert.equal(b.state, 'sleep');
   b.send('drag-start');
@@ -92,7 +94,7 @@ test('going to sleep yawns first, and a click on the sleeper wakes it with a str
   b.update(DT, { area: AREA, cursor: FAR });
   assert.equal(b.state, 'wake');
   assert.equal(b.anim, 'wake');
-  run(b, 3);
+  run(b, 4.6);
   assert.equal(b.state, 'idle');
 });
 
@@ -102,10 +104,45 @@ test('a fast cursor swipe nearby startles it', () => {
   b.send('force', { state: 'idle' });
   b.update(DT, { area: AREA, cursor: FAR });
   const c = b.center();
-  for (let i = -3; i <= 3 && b.state !== 'startled'; i++) {
-    b.update(DT, { area: AREA, cursor: { x: c.x + i * 60, y: c.y } });
+  for (let i = -10; i <= 0 && b.state !== 'startled'; i++) {
+    b.update(DT, { area: AREA, cursor: { x: c.x + i * 50, y: c.y } });
   }
   assert.equal(b.state, 'startled');
+});
+
+test('fast cursor movement beside it, not at it, does not startle it', () => {
+  const b = make();
+  landed(b);
+  b.send('force', { state: 'idle' });
+  b.update(DT, { area: AREA, cursor: FAR });
+  const c = b.center();
+  // Back and forth vertically, 100 px to the side of the cat.
+  for (let i = 0; i < 240; i++) {
+    const y = c.y + Math.sin(i / 2) * 150;
+    b.update(DT, { area: AREA, cursor: { x: c.x + 100, y } });
+    assert.notEqual(b.state, 'startled');
+  }
+});
+
+test('a quick yawn while awake stands; only bedtime curls up, and it will not nap right after waking', () => {
+  const b = make(9);
+  landed(b);
+  b.send('force', { state: 'yawn' });
+  run(b, 3);
+  assert.equal(b.state, 'idle');
+  b.energy = 0.1;
+  b.send('force', { state: 'sleep' });
+  run(b, 5);
+  assert.equal(b.state, 'sleep');
+  b.send('drag-start');
+  b.send('drag-end');
+  run(b, 3); // woken early, still tired
+  const seen = new Set();
+  for (let t = 0; t < 150; t += DT) {
+    b.update(DT, { area: AREA, cursor: FAR });
+    seen.add(b.state);
+  }
+  assert.ok(!seen.has('sleep') && !seen.has('liedown'), 'napped again right after waking');
 });
 
 test('rubbing the head makes it happy', () => {
@@ -141,23 +178,26 @@ test('talks only when standing on the floor', () => {
   assert.notEqual(b.state, 'talk');
 });
 
-test('climbs down a wall head first and turns away from it', () => {
+test('climbs down head first a little, leaps off away from the wall, lands and strolls on', () => {
   const b = make(3);
   landed(b);
   b.pos.x = b.rightX;
   b.facing = 1;
   b.send('force', { state: 'cling' });
   run(b, DT);
-  b.pos.y = b.floorY - 300;
+  b.pos.y = b.floorY - 500;
   b.enter('descend');
   run(b, 0.5);
   assert.equal(b.state, 'descend');
-  assert.ok(b.pos.y > b.floorY - 300 && b.pos.y < b.floorY);
-  assert.equal(b.pos.x, b.rightX);
-  run(b, 5);
+  assert.equal(b.pos.x, b.rightX); // still on the wall
+  const seen = [];
+  for (let t = 0; t < 12; t += DT) {
+    b.update(DT, { area: AREA, cursor: FAR });
+    if (seen.at(-1) !== b.state) seen.push(b.state);
+  }
+  assert.deepEqual(seen.slice(0, 5), ['descend', 'pounce', 'touchdown', 'stroll', 'idle']);
   assert.equal(b.pos.y, b.floorY);
-  assert.equal(b.facing, -1);
-  assert.notEqual(b.state, 'descend');
+  assert.ok(b.pos.x < b.rightX - 150, 'moved away from the wall');
 });
 
 test('waves hi once after the first landing, not after later ones', () => {
@@ -191,7 +231,7 @@ test('a nap lasts at least a minute even when not tired', () => {
   const b = make(4);
   landed(b);
   b.send('force', { state: 'sleep' });
-  run(b, 3); // the yawn
+  run(b, 4.5); // lying down, then the yawn
   assert.equal(b.state, 'sleep');
   run(b, 55);
   assert.equal(b.state, 'sleep');

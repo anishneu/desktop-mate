@@ -29,30 +29,7 @@
   "facesLeft": false,
   "poses": [
     {
-      "anims": ["walk"],
-      "height": 220,
-      "feet": [478, 891],
-      "quadruped": true,
-      "pivots": {
-        "hipLeft": [290, 775],
-        "hipRight": [445, 770],
-        "shoulderLeft": [610, 770],
-        "shoulderRight": [720, 770],
-        "tail": [335, 612],
-        "flame": [840, 380]
-      },
-      "parts": {
-        "legLeft": "walk_legLeft.png",
-        "legRight": "walk_legRight.png",
-        "armLeft": "walk_armLeft.png",
-        "armRight": "walk_armRight.png",
-        "tail": "walk_tail.png",
-        "torso": "walk_body.png",
-        "flame": "walk_flame.png"
-      }
-    },
-    {
-      "anims": ["yawn", "sleep"],
+      "anims": ["curlYawn", "sleep"],
       "height": 179,
       "feet": [512, 840],
       "pivots": {
@@ -81,8 +58,10 @@
     },
     {
       "anims": ["wake"],
+      "from": 1.5,
+      "to": 2.7,
       "height": 218,
-      "feet": [516, 949],
+      "feet": [517, 950],
       "parts": {
         "tail": "wake_tail.png",
         "torso": "wake_body.png",
@@ -94,7 +73,80 @@
       }
     },
     {
-      "transition": ["walk", "run"],
+      "anims": ["wake"],
+      "from": 0.8,
+      "to": 1.5,
+      "height": 180,
+      "feet": [510, 886],
+      "parts": {
+        "torso": "wake_rise_body.png",
+        "flame": "wake_rise_flame.png"
+      },
+      "pivots": {
+        "flame": [224, 375]
+      }
+    },
+    {
+      "anims": ["wake"],
+      "from": 2.7,
+      "to": 3.4,
+      "facesLeft": true,
+      "height": 187,
+      "feet": [510, 886],
+      "parts": {
+        "torso": "wake_stand_body.png",
+        "flame": "wake_stand_flame.png"
+      },
+      "pivots": {
+        "flame": [771, 417]
+      }
+    },
+    {
+      "anims": ["wake"],
+      "from": 3.4,
+      "height": 226,
+      "feet": [546, 948],
+      "parts": {
+        "torso": "wake_sit_body.png",
+        "flame": "wake_sit_flame.png"
+      },
+      "pivots": {
+        "flame": [467, 313]
+      }
+    },
+    {
+      "anims": ["walk"],
+      "quadruped": true,
+      "height": 213,
+      "feet": [490, 903],
+      "parts": {
+        "legLeft": "walk_legLeft.png",
+        "legRight": "walk_legRight.png",
+        "armLeft": "walk_armLeft.png",
+        "armRight": "walk_armRight.png",
+        "tail": "walk_tail.png",
+        "torso": "walk_body.png",
+        "flame": "walk_flame.png"
+      },
+      "pivots": {
+        "hipLeft": [300, 765],
+        "hipRight": [480, 768],
+        "shoulderLeft": [722, 755],
+        "shoulderRight": [640, 755],
+        "tail": [335, 618],
+        "flame": [832, 426]
+      }
+    },
+    {
+      "transition": [
+        "walk",
+        "run",
+        "pounce",
+        "touchdown",
+        "climb",
+        "cling",
+        "descend"
+      ],
       "lean": 0,
       "height": 221,
       "feet": [501, 919],
@@ -124,6 +176,20 @@
     },
     {
       "anims": ["land"],
+      "to": 0.12,
+      "height": 220,
+      "feet": [516, 952],
+      "parts": {
+        "torso": "land_brace_body.png",
+        "flame": "land_brace_flame.png"
+      },
+      "pivots": {
+        "flame": [512, 598]
+      }
+    },
+    {
+      "anims": ["land"],
+      "from": 0.12,
       "height": 229,
       "feet": [512, 949],
       "parts": {
@@ -136,11 +202,24 @@
     },
     {
       "anims": ["run"],
+      "to": 0.18,
+      "loop": 0.36,
       "lean": 0.3,
       "height": 143,
       "feet": [508, 800],
       "parts": {
         "torso": "run_body.png"
+      }
+    },
+    {
+      "anims": ["run"],
+      "from": 0.18,
+      "loop": 0.36,
+      "lean": 0.3,
+      "height": 200,
+      "feet": [493, 924],
+      "parts": {
+        "torso": "run_gather_body.png"
       }
     },
     {
@@ -182,7 +261,21 @@
       }
     },
     {
-      "anims": ["climb", "descend"],
+      "anims": ["descend"],
+      "height": 260,
+      "feet": [481, 958],
+      "parts": {
+        "tail": "descend_tail.png",
+        "torso": "descend_body.png",
+        "flame": "descend_flame.png"
+      },
+      "pivots": {
+        "tail": [672, 372],
+        "flame": [514, 855]
+      }
+    },
+    {
+      "anims": ["climb"],
       "height": 276,
       "feet": [445, 990],
       "parts": {
@@ -200,6 +293,51 @@
         "tail": [510, 740],
         "flame": [630, 243]
       }
+    },
+    {
+      "anims": ["liedown"],
+      "height": 179,
+      "feet": [512, 840],
+      "still": true,
+      "pivots": {
+        "flame": [395, 470]
+      },
+      "parts": {
+        "torso": "liedown_body.png",
+        "flame": "sleep_flame.png"
+      }
+    },
+    {
+      "anims": ["pounce"],
+      "lean": 0.3,
+      "height": 143,
+      "feet": [508, 800],
+      "parts": {
+        "torso": "run_body.png"
+      }
+    },
+    {
+      "anims": ["touchdown"],
+      "lean": 0.3,
+      "height": 200,
+      "feet": [493, 924],
+      "parts": {
+        "torso": "run_gather_body.png"
+      }
+    },
+    {
+      "anims": ["wake"],
+      "height": 179,
+      "feet": [512, 840],
+      "still": true,
+      "pivots": {
+        "flame": [395, 470]
+      },
+      "parts": {
+        "torso": "liedown_body.png",
+        "flame": "sleep_flame.png"
+      },
+      "to": 0.8
     }
   ]
 }

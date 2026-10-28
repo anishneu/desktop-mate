@@ -45,6 +45,7 @@
         p.bob = breathe;
         break;
       case 'yawn':
+      case 'curlYawn':
       case 'wake': {
         const k = Math.sin(Math.PI * clamp(at / 2.4, 0, 1));
         p.mouth = k;
@@ -56,6 +57,11 @@
         p.fx = k > 0.3 ? '~' : null;
         break;
       }
+      case 'liedown':
+        p.eyes = 0.45;
+        p.mood = 'sleepy';
+        p.bob = Math.sin(T * 1.2) * 1.5;
+        break;
       case 'sleep':
         p.sit = 1;
         p.legL = p.legR = 1.45;

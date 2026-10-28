@@ -16,8 +16,9 @@ const DEFAULT_TUNING = {
   energyRecover: 1 / 200, // empty → full in ~3 min asleep
   sleepMin: 60, // s: even a nap when not tired lasts 1–2.5 min
   sleepMax: 150,
-  startleSpeed: 2200, // cursor px/s that counts as a sudden swipe
-  startleRadius: 160,
+  napCooldown: 180, // s after waking before it will nap again
+  startleSpeed: 2400, // cursor px/s towards the cat that counts as a sudden swipe
+  startleRadius: 130,
   curiosityRadius: 480,
   maxThrow: 1800,
 };
@@ -120,17 +121,16 @@ class Brain {
       ['idle', 2],
       ['sit', 1.5],
       ['toWall', nearWall ? 1.5 : 0.6],
-      ['yawn', 0.3 + (1 - e) * 3],
-      ['sleep', e < 0.25 ? 5 : 0],
+      ['yawn', 0.3 + (1 - e) * 1.5],
+      ['sleep', e < 0.25 && this.mayNap() ? 5 : 0],
     ]);
     return next === 'sleep' ? this.bedtime() : next;
   }
 
-  // Falling asleep always starts with a yawn; the yawn then leads into sleep.
-  bedtime() {
-    this.sleepy = true;
-    return 'yawn';
-  }
+  // Falling asleep: lie down, a curled-up yawn, then sleep.
+  bedtime() { return 'liedown'; }
+
+  mayNap() { return (this.cooldowns.nap ?? 0) <= 0; }
 
   // --- main loop ------------------------------------------------------------
 
@@ -220,7 +220,7 @@ class Brain {
         const target = STATES[e.state];
         if (!target || this.state === 'dragged') continue;
         if (target.surface === 'floor' && s.surface !== 'floor') continue;
-        this.enter(e.state === 'sleep' && this.state !== 'yawn' ? this.bedtime() : e.state);
+        this.enter(e.state === 'sleep' && !['liedown', 'curlYawn'].includes(this.state) ? this.bedtime() : e.state);
       } else {
         continue;
       }
@@ -247,7 +247,11 @@ class Brain {
     if (this.state === 'sleep') return dist < 220 && c.speed > 600 ? 'wake' : undefined;
     if (!s.interruptible) return;
 
-    if (dist < this.tuning.startleRadius && c.speed > this.tuning.startleSpeed && this.ready('startle', 4)) {
+    // Startle: only a fast swipe heading at the cat from close by, not ordinary
+    // mouse movement beside it.
+    const m = this.center();
+    const towards = dist > 0 ? ((m.x - c.x) * c.vx + (m.y - c.y) * c.vy) / dist : 0;
+    if (dist < this.tuning.startleRadius && towards > this.tuning.startleSpeed && this.ready('startle', 15)) {
       return s.surface === 'wall' ? this.letGo() : 'startled';
     }
     if (s.surface !== 'floor') return;
