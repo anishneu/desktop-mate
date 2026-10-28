@@ -50,14 +50,14 @@ Author: Anish Kuila
 
 **On launch** the cat drops in from the top of the screen, lands, and waves hello. From then on it lives on its own:
 
-- **Autonomous behavior:** it walks along the taskbar, sits, heads to a screen edge and climbs it, then hangs there for a while. It either climbs back down head first or lets go and falls.
-- **Getting tired:** an energy need drains while it's awake. As energy drops it yawns more often and eventually curls up to sleep. Going to sleep always plays the open-mouth yawn first, then the closed-eye sleep. When it's rested, or when you click it, it wakes with a long stretch.
+- **Autonomous behavior:** it walks along the taskbar, sits, heads to a screen edge and climbs it, then hangs there for a while. It either climbs a little way down head first, leaps off away from the wall, lands on its feet and strolls on, or lets go and falls.
+- **Getting tired:** an energy need drains while it's awake. As energy drops it gives the odd standing yawn and eventually curls up to sleep for a few minutes. After waking it stays up for at least 3 minutes. Going to sleep always runs lie down, open-mouth yawn, then closed-eye sleep. When it's rested, or when you click it, it wakes up in steps: lying drowsy, getting up, a long stretch, standing, then sitting up.
 
 **It reacts to your cursor:**
 
 | Interaction | What happens |
 |---|---|
-| Fast cursor swipe nearby | Startled (arched back, hissing), then often runs away. On a wall, it falls off. |
+| Fast swipe straight at the cat | Startled (arched back, hissing), then often runs away from the cursor. On a wall, it falls off. Moving the mouse around beside it doesn't scare it, and it won't startle again for 15 seconds. |
 | Cursor resting nearby | Walks over to it, curious |
 | Rub the cursor over its head | Happy: ^ ^ eyes, a smile and a heart |
 | Click | Happy, or wakes up if asleep |
@@ -68,8 +68,8 @@ Author: Anish Kuila
 **Each animation uses its own drawing** (see the image above). All drawings are generated images of the same character:
 
 - **Walking:** a side view whose four legs swing in a diagonal gait.
-- **Running:** a gallop.
-- **Climbing:** front paws and back legs alternate as it climbs.
+- **Running:** a two-drawing gallop that alternates stretched and gathered.
+- **Climbing:** front paws and back legs alternate as it climbs. Climbing down uses the same drawing upside down, then the two gallop drawings for the leap and the landing.
 - **Other poses:** startled, dangling, falling, landing, waving, yawning, sleeping and stretching each have their own drawing.
 - **Turning:** a three-quarter view flashes for a moment when it starts or stops walking, so it doesn't snap from facing you to side-on.
 
@@ -91,7 +91,7 @@ Every drawing also gets procedural motion so it never looks frozen:
 | Desktop window | Electron: one transparent, frameless, always-on-top (`screen-saver` level) window, 300 × 400, hidden from the taskbar. It moves with `setBounds` every tick, and the size is passed each time so Windows DPI scaling can't drift it. | Implemented |
 | Click-through | `setIgnoreMouseEvents(true, { forward: true })`, toggled by a per-frame hit test against the cursor position sent with each tick. It works while the window slides under a still cursor. | Implemented |
 | File serving | A privileged `app://` protocol serves the project root (with a path-traversal guard), so Live2D's loaders work with web security on | Implemented |
-| Behavior engine | Pure JS state machine: 19 states, each with `anim`, `surface` (floor / wall / air), `interruptible`, `enter` and `update` | Implemented |
+| Behavior engine | Pure JS state machine: 24 states, each with `anim`, `surface` (floor / wall / air), `interruptible`, `enter` and `update` | Implemented |
 | Physics | Gravity, air drag, wall bounce, throws from the mouse's speed, falling when a floor or wall disappears (taskbar moved, display unplugged) | Implemented |
 | Needs | Energy drains while awake and refills while asleep, which biases the next choice toward yawning and sleeping | Implemented |
 | Cursor reactions | Startle on a fast swipe, petting on the head, curiosity and approach to a resting cursor, waking on a jiggle | Implemented |
@@ -110,12 +110,12 @@ Counted directly from the codebase, not estimated:
 
 | Metric | Count |
 |---|---|
-| Behavior states | 19 |
-| Animation names | 17 |
+| Behavior states | 24 |
+| Animation names | 21 |
 | Avatar types | 3 (parts, Live2D, placeholder) |
-| AI-generated source images for the fire cat | 15 |
-| Pose drawings (per-animation rigs) | 12, plus 1 transition pose |
-| PNG layers in the fire cat | 48 |
+| AI-generated source images for the fire cat | 27 (21 in use) |
+| Pose drawings (per-animation rigs) | 15, plus 1 transition pose |
+| PNG layers in the fire cat | 61 |
 | Cursor reactions | 4, plus click and drag/throw |
 | Task tools | 6 (`help`, `set_timer`, `get_time`, `open_url`, `web_search`, `behave`) |
 | IPC channels | 10 |
@@ -194,7 +194,7 @@ desktop-mate/
 │   ├── character.json            Which avatar to load, window and hitbox size, tuning, Live2D motion map
 │   ├── parts/
 │   │   ├── template/             The vector chibi exported as parts, with GUIDE.png (joint diagram)
-│   │   └── fire-cat/             The fire cat: parts.json, 48 PNG layers, source_*.jpg (not packaged)
+│   │   └── fire-cat/             The fire cat: parts.json, 61 PNG layers, source_*.jpg (not packaged)
 │   ├── models/                   Live2D models (git-ignored; see its README)
 │   └── vendor/                   Live2D Cubism core (git-ignored; not redistributable)
 ├── src/

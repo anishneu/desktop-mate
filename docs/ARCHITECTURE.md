@@ -73,7 +73,7 @@ stateDiagram-v2
   toWall --> climb --> cling
   cling --> climb
   cling --> fall : let go
-  cling --> descend --> idle : climb down
+  cling --> descend --> pounce --> touchdown --> stroll --> idle : climb down, leap off
   sit --> yawn --> sleep --> wake --> idle
   idle --> approach : cursor resting nearby
   approach --> happy
