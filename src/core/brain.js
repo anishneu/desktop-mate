@@ -113,7 +113,7 @@ class Brain {
     if (!this.autonomous) return 'idle';
     const e = this.energy;
     const nearWall = Math.min(this.pos.x - this.leftX, this.rightX - this.pos.x) < 200;
-    return weighted(this.rng, [
+    const next = weighted(this.rng, [
       ['walk', 4],
       ['idle', 2],
       ['sit', 1.5],
@@ -121,6 +121,13 @@ class Brain {
       ['yawn', 0.3 + (1 - e) * 3],
       ['sleep', e < 0.25 ? 5 : 0],
     ]);
+    return next === 'sleep' ? this.bedtime() : next;
+  }
+
+  // Falling asleep always starts with a yawn; the yawn then leads into sleep.
+  bedtime() {
+    this.sleepy = true;
+    return 'yawn';
   }
 
   // --- main loop ------------------------------------------------------------
@@ -211,7 +218,7 @@ class Brain {
         const target = STATES[e.state];
         if (!target || this.state === 'dragged') continue;
         if (target.surface === 'floor' && s.surface !== 'floor') continue;
-        this.enter(e.state);
+        this.enter(e.state === 'sleep' && this.state !== 'yawn' ? this.bedtime() : e.state);
       } else {
         continue;
       }

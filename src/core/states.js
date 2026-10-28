@@ -63,8 +63,22 @@ const STATES = {
     enter(b) { b.data.until = b.rand(3, 8); },
     update(b) {
       if (b.stateTime < b.data.until) return;
-      if (b.pos.y > b.ceilingY + 100 && b.rng() < 0.4) return 'climb';
-      return b.letGo();
+      const r = b.rng();
+      if (b.pos.y > b.ceilingY + 100 && r < 0.35) return 'climb';
+      return r < 0.7 ? 'descend' : b.letGo();
+    },
+  },
+
+  // Climbing back down head first, then turning away from the wall.
+  descend: {
+    anim: 'descend', surface: 'wall', interruptible: true,
+    update(b, dt) {
+      b.pos.y += b.tuning.climbSpeed * 1.6 * dt;
+      if (b.pos.y >= b.floorY) {
+        b.pos.y = b.floorY;
+        b.facing = -b.facing;
+        return 'idle';
+      }
     },
   },
 
@@ -79,7 +93,10 @@ const STATES = {
   yawn: {
     anim: 'yawn', surface: 'floor', interruptible: false,
     update(b) {
-      if (b.stateTime > 2.6) return b.energy < 0.25 ? 'sleep' : 'idle';
+      if (b.stateTime <= 2.6) return;
+      const sleep = b.sleepy || b.energy < 0.25;
+      b.sleepy = false;
+      return sleep ? 'sleep' : 'idle';
     },
   },
 
@@ -91,8 +108,9 @@ const STATES = {
     },
   },
 
+  // Waking up: a long stretch.
   wake: {
-    anim: 'yawn', surface: 'floor', interruptible: false,
+    anim: 'wake', surface: 'floor', interruptible: false,
     update(b) {
       if (b.stateTime > 2.6) return 'idle';
     },
@@ -150,7 +168,18 @@ const STATES = {
   land: {
     anim: 'land', surface: 'floor', interruptible: false,
     update(b) {
-      if (b.stateTime > 0.35) return 'idle';
+      if (b.stateTime <= 0.35) return;
+      if (b.greeted) return 'idle';
+      b.greeted = true; // the first landing after launch: say hi
+      return 'greet';
+    },
+  },
+
+  greet: {
+    anim: 'greet', surface: 'floor', interruptible: false,
+    enter(b) { b.faceCursor(); },
+    update(b) {
+      if (b.stateTime > 2.4) return 'idle';
     },
   },
 

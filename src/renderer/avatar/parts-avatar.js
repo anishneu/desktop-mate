@@ -10,12 +10,37 @@
   // Extra parts that animate on their own: `tail` sways behind the body and
   // `flame` (fire, sparkles, an antenna) flickers on top of the head.
   const EXTRAS = { tail: 'tail', flame: 'flame' };
-  // Tail sway [speed rad/s, amplitude rad] by animation; mood "happy" wags.
+  // Tail sway [speed rad/s, amplitude rad] by animation; otherwise mood "happy" wags.
   const TAIL = {
     walk: [5, 0.14], run: [9, 0.2], sleep: [0.8, 0.04], sit: [1.2, 0.06], yawn: [1, 0.05],
-    fall: [12, 0.25], dragged: [12, 0.22], startled: [14, 0.25], climb: [4, 0.12], cling: [2, 0.1],
+    fall: [12, 0.25], dragged: [12, 0.22], startled: [14, 0.25], climb: [4, 0.12], cling: [2, 0.1], greet: [3, 0.07], wake: [2.5, 0.12],
   };
   const QUADRUPED_SWING = 0.6; // four legs swing less than two
+  const TURN_TIME = 0.18; // seconds a transition pose shows
+  // Limb swing for pose drawings (the main drawing follows pose.js instead):
+  // [speed rad/s, {limb: amplitude rad}, {limb: rest offset rad}]; limbs alternate
+  // by the amplitude's sign.
+  const GAIT = {
+    climb: [7, { armL: 0.22, legL: -0.28, legR: 0.28 }],
+    cling: [2, { armL: 0.04, legL: 0.06, legR: -0.06 }],
+    greet: [9, { armR: 0.26 }, { armR: 0.12 }], // waves outward, never behind the head
+  };
+  // Extra whole-body motion so single drawings don't look frozen. `top` swings
+  // the drawing from its top (held by the scruff) instead of from the feet.
+  const sin = Math.sin;
+  const MOTION = {
+    climb: (T) => ({ y: -Math.abs(sin(T * 7)) * 4, rot: sin(T * 7) * 0.03 }),
+    descend: (T) => ({ y: Math.abs(sin(T * 8)) * 3, rot: sin(T * 8) * 0.04 }),
+    cling: (T) => ({ sy: 1 + sin(T * 2.2) * 0.015, rot: sin(T * 1.1) * 0.025 }),
+    fall: (T) => ({ rot: sin(T * 13) * 0.14, sx: 1 + sin(T * 9) * 0.04, sy: 1 - sin(T * 9) * 0.04 }),
+    dragged: (T, p, vx) => ({ top: true, rot: Math.max(-0.5, Math.min(0.5, -vx * 0.0005)) + sin(T * 2.6) * 0.07 }),
+    startled: (T) => ({ x: sin(T * 55) * 1.5, sy: 1 + Math.abs(sin(T * 12)) * 0.03 }),
+    run: (T) => ({ y: -Math.abs(sin(T * 11)) * 9, rot: sin(T * 11) * 0.07 }),
+    yawn: (T) => MOTION.sleep(T), // same breathing, so yawning into sleep is seamless
+    wake: (T, p) => ({ sx: 1 + p.mouth * 0.04, sy: 1 - p.mouth * 0.03 }),
+    sleep: (T) => ({ sx: 1 - sin(T * 1.2) * 0.01, sy: 1 + sin(T * 1.2) * 0.02 }),
+    greet: (T) => ({ y: -Math.abs(sin(T * 4.5)) * 3 }),
+  };
 
   // Loads a full-canvas PNG and crops it to its visible pixels.
   async function loadTrimmed(url) {
@@ -55,7 +80,7 @@
   const hex = (v, fallback) => (typeof v === 'string' ? parseInt(v.replace('#', ''), 16) : fallback);
 
   // Builds one rig (the main drawing or a pose) into its own container.
-  async function buildRig(spec, base, label) {
+  async function buildRig(spec, base, label, isPose = false) {
     const file = (name) => new URL(name, base).href;
     const parts = spec.parts || {};
     const pivots = spec.pivots || {};
@@ -85,6 +110,7 @@
     const rig = {
       view: new PIXI.Container(),
       quadruped: !!spec.quadruped,
+      still: !!spec.still,
       facesLeft: !!spec.facesLeft,
       headTop: (top - feet[1]) * s,
       halfWidth: Math.max(...all.map((i) => Math.max(feet[0] - i.x, i.x + i.w - feet[0]))) * s * 0.8,
@@ -116,11 +142,15 @@
     rig.armL = joint(pivots.shoulderLeft || feet, feet, img.armLeft);
     rig.armR = joint(pivots.shoulderRight || feet, feet, img.armRight);
     rig.head = joint(neck, feet, img.head);
-    // A quadruped's front legs ("arms") go behind the body like the back legs.
-    const limbs = rig.quadruped
+    // In pose drawings (and a quadruped's front legs) the limbs go behind the
+    // body, which keeps a stub of each joint so the cut never shows.
+    const limbs = rig.quadruped || isPose
       ? [rig.armL, rig.armR, rig.legL, rig.legR, torso]
       : [rig.legL, rig.legR, torso, rig.armL, rig.armR];
     rig.view.addChild(rig.tail, rig.hairBack, ...limbs, rig.head);
+    // `open`: the same drawing with the mouth open, swapped in while the
+    // animation's mouth is open (yawning, talking).
+    if (img.open) rig.openFrame = rig.view.addChild(joint(feet, feet, img.open));
 
     // Face: sprite variants, code-drawn eyes and mouth, or nothing (baked into the art).
     if (face.mode === 'sprites') {
@@ -179,6 +209,8 @@
       this.blink = DM.face.blinker();
       this.faceKey = '';
       this.tailPhase = 0;
+      this.vx = 0;
+      this.lastX = null;
       this.T = 0;
     }
 
@@ -188,11 +220,15 @@
       const poses = spec.poses || [];
       const rigs = await Promise.all([
         buildRig(spec, base, 'parts.json'),
-        ...poses.map((p, i) => buildRig(p, base, `parts.json poses[${i}]`)),
+        ...poses.map((p, i) => buildRig(p, base, `parts.json poses[${i}]`, true)),
       ]);
       this.main = rigs[0];
       this.byAnim = {};
       poses.forEach((p, i) => { for (const a of p.anims || []) this.byAnim[a] = rigs[i + 1]; });
+      // A transition pose (e.g. a three-quarter turn) flashes when entering or leaving its anims.
+      const t = poses.findIndex((p) => p.transition);
+      this.turn = t < 0 ? null : { rig: rigs[t + 1], anims: new Set(poses[t].transition), until: 0 };
+      this.prevAnim = null;
       for (const r of rigs) {
         r.view.visible = r === this.main;
         this.body.addChild(r.view);
@@ -205,7 +241,11 @@
 
     update(dt, p, s) {
       this.T += dt;
-      const rig = this.byAnim[s.anim] || this.main;
+      const turn = this.turn;
+      if (turn && this.prevAnim && s.anim !== this.prevAnim
+        && turn.anims.has(s.anim) !== turn.anims.has(this.prevAnim)) turn.until = this.T + TURN_TIME;
+      this.prevAnim = s.anim;
+      const rig = turn && this.T < turn.until ? turn.rig : this.byAnim[s.anim] || this.main;
       if (rig !== this.rig) {
         this.rig.view.visible = false;
         rig.view.visible = true;
@@ -214,10 +254,28 @@
       }
       const facing = (s.facing || 1) * (rig.facesLeft ? -1 : 1);
       this.root.scale.x = facing;
-      this.body.y = p.bob + p.sit * rig.sitDrop;
-      this.body.scale.set(2 - p.squash, p.squash);
-      this.body.rotation = p.lean;
-      if (rig.quadruped) {
+      // A `still` pose (curled up asleep) keeps its place: no bob, squash or lean.
+      this.body.y = rig.still ? 0 : p.bob + p.sit * rig.sitDrop;
+      this.body.scale.set(rig.still ? 1 : 2 - p.squash, rig.still ? 1 : p.squash);
+      this.body.rotation = rig.still ? 0 : p.lean;
+      // Window speed, for the dangling swing.
+      if (this.lastX !== null && dt > 0) this.vx += ((s.x - this.lastX) / dt - this.vx) * Math.min(1, dt * 8);
+      this.lastX = s.x;
+      if (rig !== this.main) {
+        const m = (MOTION[s.anim] || (() => ({})))(this.T, p, this.vx);
+        const pivotY = m.top ? rig.headTop : 0;
+        rig.view.pivot.set(0, pivotY);
+        rig.view.position.set(m.x || 0, pivotY + (m.y || 0));
+        rig.view.rotation = m.rot || 0;
+        rig.view.scale.set(m.sx || 1, m.sy || 1);
+      }
+      const gait = rig !== this.main && !rig.quadruped && GAIT[s.anim];
+      if (gait) {
+        const w = Math.sin(this.T * gait[0]);
+        for (const limb of ['armL', 'armR', 'legL', 'legR']) {
+          rig[limb].rotation = w * (gait[1][limb] || 0) + (gait[2]?.[limb] || 0);
+        }
+      } else if (rig.quadruped) {
         // Diagonal gait: each back leg moves with the opposite front leg.
         rig.legL.rotation = rig.armR.rotation = -p.legL * QUADRUPED_SWING;
         rig.legR.rotation = rig.armL.rotation = -p.legR * QUADRUPED_SWING;
@@ -228,9 +286,14 @@
         rig.armR.rotation = -p.armR;
       }
       rig.head.rotation = rig.hairBack.rotation = p.headTilt;
-      const [speed, amp] = p.mood === 'happy' ? [10, 0.22] : TAIL[s.anim] || [1.6, 0.08];
+      const [speed, amp] = TAIL[s.anim] || (p.mood === 'happy' ? [10, 0.22] : [1.6, 0.08]);
       this.tailPhase += speed * dt;
       rig.tail.rotation = Math.sin(this.tailPhase) * amp - p.lean * 0.5;
+      if (rig.openFrame) {
+        // A quick (~0.1 s) dissolve between the two frames as the mouth opens and closes.
+        const t = Math.min(1, Math.max(0, (p.mouth - 0.15) / 0.2));
+        rig.openFrame.alpha = t * t * (3 - 2 * t);
+      }
       if (rig.flame) {
         const k = s.anim === 'sleep' ? 0.4 : p.mood === 'surprised' ? 1.8 : 1;
         const t = this.T;

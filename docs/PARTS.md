@@ -30,6 +30,7 @@ Use any free image generator. Ask for one image in a pose that's easy to cut:
 | `legLeft.png`, `legRight.png` | optional | Each whole leg with its shoe |
 | `tail.png` | optional | A tail, drawn behind the body. Sways on its own, faster when walking, wags when happy. Needs `pivots.tail` (the tail's base). |
 | `flame.png` | optional | Fire, sparkles or an antenna on the head that flickers. Leave the same art in `head.png` too: the flame only ever grows, so the copy underneath stays covered. Needs `pivots.flame` (its base). |
+| `open.png` | optional, for poses | The same drawing with the mouth open (generate it as an edit of the closed one so nothing else moves). It replaces the drawing while the animation's mouth is open, e.g. yawning. |
 | `eyes_open.png`, `eyes_closed.png`, `eyes_happy.png` (`eyes_surprised.png` optional) | for sprite faces | Both eyes, cut from the variant images |
 | `mouth_closed.png`, `mouth_open.png`, `mouth_wide.png`, `mouth_smile.png` | for sprite faces | The mouth, cut from the variant images |
 
@@ -91,7 +92,7 @@ Then check the poses without waiting for them:
 npm run snapshot -- --state=yawn
 ```
 
-Try `sit`, `sleep`, `walk`, `happy`, `climb` and `startled` too. If something is wrong with the files, the app falls back to the built-in chibi and prints why in the terminal, for example `parts.json: "armLeft" needs pivots.shoulderLeft`.
+Try `sit`, `sleep`, `walk`, `happy` and `startled` too. Add `--delay=300` to catch short states like `land`. Wall and air states fall back to the floor when forced there, so check their art with `--anim=climb` instead, which shows an animation whatever the state. If something is wrong with the files, the app falls back to the built-in chibi and prints why in the terminal, for example `parts.json: "armLeft" needs pivots.shoulderLeft`.
 
 If your character is much wider or taller than the template on screen, also adjust `hitbox` in `character.json`. The behavior engine uses it to find the screen edges and the head.
 
@@ -114,8 +115,12 @@ One front-facing image can't walk convincingly or curl up to sleep. Generate mor
 ]
 ```
 
-- **`anims`**: the animations that show this drawing instead of the main one: `idle`, `walk`, `run`, `sit`, `yawn`, `sleep`, `climb`, `cling`, `fall`, `land`, `dragged`, `startled`, `happy` or `talk`.
+- **`anims`**: the animations that show this drawing instead of the main one: `idle`, `walk`, `run`, `sit`, `yawn`, `sleep`, `climb`, `cling`, `descend` (climbing down a wall head first), `fall`, `land`, `dragged`, `startled`, `happy`, `greet` (the wave hello after launch), `wake` (the stretch after sleeping) or `talk`. Going to sleep always plays `yawn` first.
+- **Limbs in a pose** (`armLeft`, `armRight`, `legLeft`, `legRight`, `tail`, each with its pivot) swing on their own in `climb`, `cling` and `greet`, and every pose drawing gets some whole-body motion (bounce, sway, breathing, a dangling swing) so a single image doesn't look frozen.
+- **`transition`** (instead of `anims`): a pose such as a three-quarter turn that flashes for a moment whenever the companion starts or stops one of the listed animations, e.g. `"transition": ["walk", "run"]`.
+- **Wall poses** (`climb`, `cling`, `descend`) are drawn with the wall on the right. Put `feet[0]` 75 screen px (half the hitbox width) left of where the wall is in the image, so the paws touch the screen edge. The app mirrors the drawing for the left wall.
 - **`height`**: pick it so the character looks the same size as the main drawing, not necessarily the same height (a sleeping cat is shorter).
+- **`still`**: keep the drawing in place, with no bob, squash or lean (a curled-up sleeper), apart from slow breathing.
 - **`quadruped`**: for four-legged side views. `legLeft`/`legRight` are the back legs and `armLeft`/`armRight` the front legs; all four go behind the body and swing in a diagonal gait. Cut each leg straight across at the knee, put its pivot on that cut line, and leave about 40 px of the leg above the cut (hidden behind the body) so a swing never opens a gap.
 - A side view faces right unless `facesLeft` is set; the app mirrors it when walking left.
 

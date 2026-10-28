@@ -16,6 +16,8 @@ const { width: W, height: H } = character.window;
 const TICK_MS = 1000 / 60;
 const PROMPT_SHORTCUT = 'Ctrl+Alt+M';
 const snapshotArg = process.argv.find((a) => a.startsWith('--snapshot='));
+// Dev only: `--anim=climb` shows that animation whatever the state, to check its art.
+const forcedAnim = process.argv.find((a) => a.startsWith('--anim='))?.slice('--anim='.length);
 const exportDir = process.argv.find((a) => a.startsWith('--export-template='))?.slice('--export-template='.length);
 
 let win;
@@ -88,7 +90,7 @@ function tick(dt) {
     win.setBounds({ x: s.x, y: s.y, width: W, height: H });
     lastPos = key;
   }
-  win.webContents.send('mate:tick', { ...s, cursor: { x: cursor.x - s.x, y: cursor.y - s.y } });
+  win.webContents.send('mate:tick', { ...s, ...(forcedAnim && { anim: forcedAnim }), cursor: { x: cursor.x - s.x, y: cursor.y - s.y } });
 }
 
 function startLoop() {
@@ -152,16 +154,19 @@ ipcMain.on('mate:export-file', (_e, name, data) => {
 ipcMain.on('mate:export-done', () => app.quit());
 
 // Dev helper: `npm run snapshot` grabs the window after a few seconds and exits.
-// Add `-- --state=sleep` to force a state once the companion has landed.
+// Add `-- --state=sleep` to force a state once the companion has landed, and
+// `--delay=300` (ms after forcing) to catch short states like land or startled.
+// `--anim=cling` shows an animation's art without the state (e.g. on the floor).
 function captureSnapshot(file) {
-  const state = process.argv.find((a) => a.startsWith('--state='))?.slice('--state='.length);
+  const arg = (name) => process.argv.find((a) => a.startsWith(`--${name}=`))?.slice(name.length + 3);
+  const state = arg('state');
   if (state) setTimeout(() => brain.send('force', { state }), 3000);
   setTimeout(async () => {
     const image = await win.webContents.capturePage();
     fs.writeFileSync(path.resolve(file), image.toPNG());
     console.log(`snapshot written to ${path.resolve(file)} (state: ${brain.state})`);
     app.quit();
-  }, 5000);
+  }, 3000 + Number(arg('delay') || 2000));
 }
 
 if (!app.requestSingleInstanceLock()) {

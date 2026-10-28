@@ -17,6 +17,7 @@
     "files": [
       "src/**/*",
       "assets/**/*",
+      "!assets/parts/**/source*.jpg",
       "package.json"
     ],
     "win": {
