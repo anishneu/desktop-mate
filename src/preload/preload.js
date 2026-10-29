@@ -11,6 +11,8 @@ contextBridge.exposeInMainWorld('mate', {
   showMenu: () => ipcRenderer.send('mate:menu'),
   command: (text) => ipcRenderer.send('mate:command', text),
   promptOpened: (open) => ipcRenderer.send('mate:prompt', open),
+  // How far the current drawing reaches, so the brain keeps all of it on screen.
+  setExtent: (ext) => ipcRenderer.send('mate:extent', ext),
   onTick: (fn) => ipcRenderer.on('mate:tick', (_e, s) => fn(s)),
   onSay: (fn) => ipcRenderer.on('mate:say', (_e, msg) => fn(msg)),
   onOpenPrompt: (fn) => ipcRenderer.on('mate:open-prompt', () => fn()),

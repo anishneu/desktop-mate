@@ -16,14 +16,10 @@ function airborne(b, dt) {
   vel.x *= Math.pow(0.6, dt); // air drag
   pos.x += vel.x * dt;
   pos.y += vel.y * dt;
-  if (pos.x <= b.leftX || pos.x >= b.rightX) {
-    pos.x = clamp(pos.x, b.leftX, b.rightX);
-    vel.x *= -0.4;
-  }
-  if (pos.y < b.ceilingY) {
-    pos.y = b.ceilingY;
-    vel.y = Math.abs(vel.y) * 0.3;
-  }
+  // Bounce off the screen's edges only when heading out; a drawing that is wider
+  // than the last one eases back in (Brain.keepInBounds) instead of jumping.
+  if ((pos.x <= b.leftX && vel.x < 0) || (pos.x >= b.rightX && vel.x > 0)) vel.x *= -0.4;
+  if (pos.y < b.ceilingY && vel.y < 0) vel.y = Math.abs(vel.y) * 0.3;
   if (Math.abs(vel.x) > 20) b.facing = Math.sign(vel.x);
   if (pos.y < b.floorY) return false;
   pos.y = b.floorY;
@@ -68,13 +64,17 @@ const STATES = {
   climb: {
     anim: 'climb', surface: 'wall', interruptible: true,
     enter(b) {
+      // Walking stops when its nose reaches the edge; the climbing drawing's paws meet it.
+      b.pos.x = b.facing < 0 ? b.wallLeftX : b.wallRightX;
       const top = b.ceilingY;
       b.data.targetY = Math.max(top, Math.min(b.pos.y - 80, top + (b.floorY - top) * b.rand(0, 0.65)));
     },
     update(b, dt) {
       b.pos.y -= b.tuning.climbSpeed * dt;
-      if (b.pos.y <= b.data.targetY) {
-        b.pos.y = b.data.targetY;
+      // The ceiling can come down once the (taller) climbing drawing is reported.
+      const targetY = Math.max(b.data.targetY, b.ceilingY);
+      if (b.pos.y <= targetY) {
+        b.pos.y = targetY;
         return 'cling';
       }
     },

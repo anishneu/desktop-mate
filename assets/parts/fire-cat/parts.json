@@ -97,7 +97,7 @@
       "anims": ["wake"],
       "from": 0.8,
       "to": 1.5,
-      "height": 180,
+      "height": 225,
       "feet": [510, 886],
       "parts": {
         "torso": "wake_rise_body.png",
@@ -112,7 +112,7 @@
       "from": 2.7,
       "to": 3.4,
       "facesLeft": true,
-      "height": 187,
+      "height": 217,
       "feet": [510, 886],
       "parts": {
         "torso": "wake_stand_body.png",
@@ -125,7 +125,7 @@
     {
       "anims": ["wake"],
       "from": 3.4,
-      "height": 226,
+      "height": 243,
       "feet": [546, 948],
       "parts": {
         "torso": "wake_sit_body.png",
@@ -417,7 +417,7 @@
       "to": 0.18,
       "loop": 0.36,
       "lean": 0.3,
-      "height": 143,
+      "height": 172,
       "feet": [508, 800],
       "parts": {
         "torso": "run_body.png"
@@ -428,7 +428,7 @@
       "from": 0.18,
       "loop": 0.36,
       "lean": 0.3,
-      "height": 200,
+      "height": 240,
       "feet": [493, 924],
       "parts": {
         "torso": "run_gather_body.png"
@@ -436,7 +436,7 @@
     },
     {
       "anims": ["startled"],
-      "height": 236,
+      "height": 290,
       "feet": [513, 964],
       "parts": {
         "torso": "startled_body.png",
@@ -448,7 +448,7 @@
     },
     {
       "anims": ["dragged"],
-      "height": 287,
+      "height": 259,
       "feet": [511, 973],
       "parts": {
         "torso": "dragged_body.png",
@@ -460,8 +460,8 @@
     },
     {
       "anims": ["cling"],
-      "height": 279,
-      "feet": [453, 981],
+      "height": 334,
+      "feet": [494, 981],
       "parts": {
         "tail": "cling_tail.png",
         "torso": "cling_body.png",
@@ -474,8 +474,8 @@
     },
     {
       "anims": ["descend"],
-      "height": 260,
-      "feet": [481, 958],
+      "height": 323,
+      "feet": [531, 958],
       "parts": {
         "tail": "descend_tail.png",
         "torso": "descend_body.png",
@@ -488,8 +488,8 @@
     },
     {
       "anims": ["climb"],
-      "height": 276,
-      "feet": [445, 990],
+      "height": 333,
+      "feet": [489, 990],
       "parts": {
         "armLeft": "climb_armLeft.png",
         "legLeft": "climb_legLeft.png",
@@ -522,7 +522,7 @@
     {
       "anims": ["pounce"],
       "lean": 0.3,
-      "height": 143,
+      "height": 172,
       "feet": [508, 800],
       "parts": {
         "torso": "run_body.png"
@@ -531,7 +531,7 @@
     {
       "anims": ["touchdown"],
       "lean": 0.3,
-      "height": 200,
+      "height": 240,
       "feet": [493, 924],
       "parts": {
         "torso": "run_gather_body.png"

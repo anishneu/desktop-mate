@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { Brain } = require('../src/core/brain');
+const { Brain, STATES } = require('../src/core/brain');
 
 const AREA = { x: 0, y: 0, width: 1920, height: 1040 };
 const FAR = { x: -5000, y: -5000 };
@@ -54,6 +54,30 @@ test('stays inside the work area and lives a full day cycle', () => {
     assert.ok(b.pos.y >= b.ceilingY && b.pos.y <= b.floorY, `y out of bounds in ${b.state}`);
   }
   for (const s of ['walk', 'sit', 'climb', 'cling', 'yawn', 'liedown', 'sleep']) assert.ok(seen.has(s), `never entered ${s}`);
+});
+
+test('with a wide drawing reported, all of it stays on screen, and it still climbs flush with the edge', () => {
+  const b = make(7);
+  // A drawing reaching 110 px either side of the window's middle and 340 px up.
+  b.setExtent({ left: 40, right: 40, top: 60 });
+  const seen = new Set();
+  let prevX = b.pos.x;
+  let landed = false;
+  for (let t = 0; t < 20 * 60; t += DT) {
+    b.update(DT, { area: AREA, cursor: FAR });
+    seen.add(b.state);
+    const surface = STATES[b.state].surface;
+    if (surface === 'wall') {
+      assert.ok(b.pos.x === b.wallLeftX || b.pos.x === b.wallRightX, `off the wall in ${b.state}`);
+    } else if (surface === 'floor') {
+      assert.ok(b.pos.x >= b.leftX - 0.5 && b.pos.x <= b.rightX + 0.5, `drawing off screen in ${b.state}`);
+      assert.ok(Math.abs(b.pos.x - prevX) < 40, `jumped sideways in ${b.state}`);
+    }
+    if (b.state !== 'fall') landed = true; // it drops in from above the screen on purpose
+    if (landed) assert.ok(b.pos.y >= b.ceilingY - 0.5, `above the top of the screen in ${b.state}`);
+    prevX = b.pos.x;
+  }
+  for (const s of ['walk', 'climb', 'cling']) assert.ok(seen.has(s), `never entered ${s}`);
 });
 
 test('drag and throw: follows the cursor, then falls with its velocity', () => {

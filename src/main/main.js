@@ -138,6 +138,7 @@ function showMenu() {
 
 ipcMain.on('mate:interactive', (_e, on) => win.setIgnoreMouseEvents(!on, { forward: true }));
 ipcMain.on('mate:drag', (_e, phase) => brain.send(phase === 'start' ? 'drag-start' : 'drag-end'));
+ipcMain.on('mate:extent', (_e, ext) => brain.setExtent(ext));
 ipcMain.on('mate:menu', showMenu);
 ipcMain.on('mate:command', (_e, text) => say(tasks.run(String(text), taskContext)));
 ipcMain.on('mate:prompt', (_e, open) => {
@@ -167,7 +168,7 @@ function captureSnapshot(file) {
   if (state) {
     setTimeout(() => {
       if (STATES[state]?.surface === 'wall') {
-        brain.pos.x = brain.rightX;
+        brain.pos.x = brain.wallRightX;
         brain.pos.y = brain.floorY - 260;
         brain.facing = 1;
       }
@@ -184,7 +185,7 @@ function captureSnapshot(file) {
       fs.writeFileSync(path.resolve(out), image.toPNG());
       if (i < frames - 1) await new Promise((r) => setTimeout(r, every));
     }
-    console.log(`snapshot written to ${path.resolve(file)} (state: ${brain.state})`);
+    console.log(`snapshot written to ${path.resolve(file)} (state: ${brain.state}, extent: ${JSON.stringify(brain.ext)})`);
     app.quit();
   }, 3000 + Number(arg('delay') || 2000));
 }
