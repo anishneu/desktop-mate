@@ -13,10 +13,11 @@
   // Tail sway [speed rad/s, amplitude rad] by animation; otherwise mood "happy" wags.
   const TAIL = {
     walk: [5, 0.14], run: [9, 0.2], sleep: [0.8, 0.04], sit: [1.2, 0.06], yawn: [1, 0.05],
-    fall: [7, 0.3], dragged: [12, 0.22], startled: [14, 0.25], climb: [4, 0.12], descend: [4, 0.12], pounce: [9, 0.2], touchdown: [4, 0.1], cling: [2, 0.1], greet: [3, 0.07], wake: [2.5, 0.12],
+    fall: [7, 0.3], dragged: [12, 0.22], startled: [14, 0.25], climb: [4, 0.12], descend: [4, 0.12], pounce: [9, 0.2], touchdown: [4, 0.1], cling: [2, 0.1], greet: [3, 0.07], wake: [2.5, 0.12], mad: [13, 0.3],
   };
   const QUADRUPED_SWING = 0.6; // four legs swing less than two
-  const TURN_TIME = 0.18; // seconds a transition pose shows
+  const TURN_STEP = 0.13; // seconds each drawing of a turn shows
+  const TURN_FADE_TIME = 0.07; // dissolve between the drawings of a turn
   const FADE_TIME = 0.12; // seconds one drawing dissolves into the next
   const CYCLE_FADE_TIME = 0.04; // between the frames of a looping cycle (a gallop)
   // Limb swing for pose drawings (the main drawing follows pose.js instead):
@@ -46,16 +47,35 @@
     liedown: (T) => MOTION.sleep(T),
     sleep: (T) => ({ sx: 1 - sin(T * 1.2) * 0.01, sy: 1 + sin(T * 1.2) * 0.02 }),
     greet: (T) => ({ y: -Math.abs(sin(T * 4.5)) * 3 }),
+    // The head circles round from the feet up; shaking it off is fast and dies away.
+    dizzy: (T) => ({ x: Math.cos(T * 5) * 3, y: sin(T * 5) * 1.5, rot: Math.cos(T * 5) * 0.05 }),
+    shakeOff: (T, p, vx, at) => {
+      const k = Math.max(0, 1 - at / 0.7);
+      return { x: sin(T * 42) * 2 * k, rot: sin(T * 42) * 0.05 * k };
+    },
+    recover: (T, p, vx, at) => ({ rot: sin(at * 4) * 0.04 * Math.max(0, 1 - at / 1.2) }),
   };
 
-  // Loads a full-canvas PNG and crops it to its visible pixels.
-  async function loadTrimmed(url) {
+  // Loads a full-canvas PNG and crops it to its visible pixels. Each file loads
+  // once however many poses share it.
+  const loaded = new Map();
+  function loadTrimmed(url) {
+    if (!loaded.has(url)) loaded.set(url, trim(url));
+    return loaded.get(url);
+  }
+
+  async function trim(url) {
     const img = new Image();
     img.src = url;
-    try {
-      await img.decode();
-    } catch {
-      throw new Error(`could not load ${url}`);
+    // With dozens of images decoding at once Chromium can turn one down; try again.
+    for (let attempt = 1; ; attempt++) {
+      try {
+        await img.decode();
+        break;
+      } catch {
+        if (attempt === 3) throw new Error(`could not load ${url}`);
+        await new Promise((r) => setTimeout(r, 100 * attempt));
+      }
     }
     const c = document.createElement('canvas');
     c.width = img.width;
@@ -101,8 +121,10 @@
     // Load every image in parallel.
     const load = (entries) => Promise.all(entries.map(async ([k, f]) => [k, await loadTrimmed(file(f))]));
     const variants = (group) => Object.entries((face.mode === 'sprites' && face[group]) || {});
-    const [img, eyes, mouth] = (await Promise.all([
+    const spins = spec.spin || [];
+    const [img, eyes, mouth, spinImg] = (await Promise.all([
       load(Object.entries(parts)), load(variants('eyes')), load(variants('mouth')),
+      load(spins.map((p) => [p.part, p.part])),
     ])).map(Object.fromEntries);
     if (!Object.keys(img).length) fail('lists no parts');
 
@@ -160,6 +182,21 @@
     // `open`: the same drawing with the mouth open, swapped in while the
     // animation's mouth is open (yawning, talking).
     if (img.open) rig.openFrame = rig.view.addChild(joint(feet, feet, img.open));
+    // `spin`: discs that turn in place (spiral eyes). Each is drawn round and
+    // squashed back into its oval by an outer container, so it turns inside the oval.
+    rig.spinners = spins.map((p) => {
+      const outer = rig.view.addChild(new PIXI.Container());
+      outer.position.set(...at(p.at, feet));
+      outer.scale.set(...(p.squash || [1, 1]));
+      const inner = outer.addChild(new PIXI.Container());
+      inner.addChild(sprite(spinImg[p.part], p.at));
+      return { view: inner, speed: p.speed ?? 5 };
+    });
+    // `blink`: closed eyes painted over a drawing whose eyes are baked in.
+    if (img.blink) {
+      rig.blinkFrame = rig.view.addChildAt(joint(feet, feet, img.blink), rig.view.getChildIndex(torso) + 1);
+      rig.blinkFrame.visible = false;
+    }
 
     // Face: sprite variants, code-drawn eyes and mouth, or nothing (baked into the art).
     if (face.mode === 'sprites') {
@@ -189,6 +226,27 @@
         colors: { ...DM.face.COLORS, iris: hex(d.iris, DM.face.COLORS.iris), line: hex(d.line, DM.face.COLORS.line) },
       };
     }
+    // Pink cheeks (shown when happy) and angry brows that cut across the top of the eyes.
+    if (face.blush) {
+      rig.blush = rig.head.addChild(new PIXI.Graphics());
+      const r = (face.blushSize || 40) * s;
+      for (const c of face.blush) {
+        const [x, y] = at(c, neck);
+        for (let i = 6; i >= 1; i--) rig.blush.beginFill(0xff6f91, 0.14).drawEllipse(x, y, r * i / 6, r * 0.62 * i / 6).endFill();
+      }
+      rig.blush.alpha = 0;
+    }
+    if (face.brows) {
+      rig.brows = rig.head.addChild(new PIXI.Graphics());
+      for (const [x0, y0, x1, y1] of face.brows) {
+        const [a, b] = at([x0, y0], neck);
+        const [c, d] = at([x1, y1], neck);
+        const up = 70 * s;
+        rig.brows.beginFill(hex(face.fur, 0x363538)).drawPolygon([a, b, c, d, c, d - up, a, b - up]).endFill();
+        rig.brows.lineStyle(8 * s, hex(face.lid, 0x2d0c0a)).moveTo(a, b).lineTo(c, d).lineStyle(0);
+      }
+      rig.brows.alpha = 0;
+    }
     if (img.hairFront) rig.head.addChild(sprite(img.hairFront, neck));
     // The flame is a copy of art that is also in head.png (or torso.png), so it
     // only ever grows: the original underneath stays covered.
@@ -198,6 +256,27 @@
     }
     return rig;
   }
+
+  // A soft white radial gradient, tinted per mood.
+  let glowTex;
+  function glowTexture() {
+    if (glowTex) return glowTex;
+    const c = document.createElement('canvas');
+    c.width = c.height = 256;
+    const ctx = c.getContext('2d');
+    const g = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+    g.addColorStop(0, 'rgba(255,255,255,0.9)');
+    g.addColorStop(0.45, 'rgba(255,255,255,0.45)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 256, 256);
+    return (glowTex = PIXI.Texture.from(c));
+  }
+
+  const mix = (a, b, t) => {
+    const ch = (sh) => Math.round(((a >> sh) & 255) + (((b >> sh) & 255) - ((a >> sh) & 255)) * t) << sh;
+    return ch(16) | ch(8) | ch(0);
+  };
 
   function show(v, name) {
     if (v.shown === name) return;
@@ -212,8 +291,12 @@
       this.view = new PIXI.Container();
       this.root = new PIXI.Container(); // mirrored for facing
       this.body = new PIXI.Container(); // bob / squash / lean, pivot at the feet
+      this.glow = this.view.addChild(new PIXI.Sprite(glowTexture()));
+      this.glow.anchor.set(0.5);
+      this.glow.alpha = 0;
       this.view.addChild(this.root);
       this.root.addChild(this.body);
+      this.mood = { blush: 0, glow: 0, angry: 0 }; // eased versions of the pose's values
       this.look = { x: 0, y: 0 };
       this.blink = DM.face.blinker();
       this.faceKey = '';
@@ -241,9 +324,12 @@
         }
       });
       this.animT = 0;
-      // A transition pose (e.g. a three-quarter turn) flashes when entering or leaving its anims.
-      const t = poses.findIndex((p) => p.transition);
-      this.turn = t < 0 ? null : { rig: rigs[t + 1], anims: new Set(poses[t].transition), until: 0 };
+      // Transition poses (turning from the front to the side, in `step` order)
+      // play in sequence when entering or leaving their anims.
+      const steps = poses.map((p, i) => [p, rigs[i + 1]]).filter(([p]) => p.transition)
+        .sort(([a], [b]) => (a.step ?? 0) - (b.step ?? 0));
+      for (const [, r] of steps) r.turnStep = true;
+      this.turn = steps.length ? { steps: steps.map(([, r]) => r), anims: new Set(steps[0][0].transition), seq: null } : null;
       this.prevAnim = null;
       for (const r of rigs) {
         r.view.visible = r === this.main;
@@ -258,19 +344,41 @@
     update(dt, p, s) {
       this.T += dt;
       const turn = this.turn;
-      if (turn && this.prevAnim && s.anim !== this.prevAnim
-        && turn.anims.has(s.anim) !== turn.anims.has(this.prevAnim)) turn.until = this.T + TURN_TIME;
+      const facingNow = s.facing || 1;
+      if (turn && this.prevAnim) {
+        const was = turn.anims.has(this.prevAnim);
+        const is = turn.anims.has(s.anim);
+        const old = this.prevFacing;
+        const frames = (rigs, facing) => rigs.map((rig) => ({ rig, facing }));
+        let seq = null;
+        if (turn.seq && s.anim === this.prevAnim && facingNow !== old) {
+          // A new direction mid-turn (a walk picks its way a tick after it starts):
+          // the rest of the turn heads that way instead of starting over.
+          for (const f of turn.seq.frames) f.facing = facingNow;
+        } else if (is && !was) seq = frames(turn.steps, facingNow); // front → side
+        else if (was && !is) seq = frames([...turn.steps].reverse(), old); // side → front
+        else if (is && s.anim === this.prevAnim && facingNow !== old) {
+          // Turning round side-on (not a leap off a wall): back towards the front, then out the other way.
+          const back = [...turn.steps].reverse();
+          seq = [...frames(back, old), ...frames(back.slice(0, -1).reverse(), facingNow)];
+        }
+        if (seq) turn.seq = { frames: seq, start: this.T };
+      }
+      this.prevFacing = facingNow;
+      const step = turn?.seq && turn.seq.frames[Math.floor((this.T - turn.seq.start) / TURN_STEP)];
+      if (turn && !step) turn.seq = null;
       this.animT = s.anim === this.prevAnim ? this.animT + dt : 0;
       this.prevAnim = s.anim;
       const timed = (this.byAnim[s.anim] || []).find((e) => {
         const t = e.loop ? this.animT % e.loop : this.animT;
         return t >= e.from && t < e.to;
       });
-      const rig = turn && this.T < turn.until ? turn.rig : timed?.rig || this.main;
+      const rig = step ? step.rig : timed?.rig || this.main;
       if (rig !== this.rig) {
         // The old drawing stays on top, frozen, and dissolves away over the new one.
         if (this.fading) this.fading.view.visible = false;
-        this.fadeTime = rig.cycle && this.rig.cycle ? CYCLE_FADE_TIME : FADE_TIME;
+        this.fadeTime = rig.cycle && this.rig.cycle ? CYCLE_FADE_TIME
+          : rig.turnStep || this.rig.turnStep ? TURN_FADE_TIME : FADE_TIME;
         this.fading = this.rig;
         this.fadeT = 0;
         this.body.setChildIndex(this.rig.view, this.body.children.length - 1);
@@ -289,7 +397,8 @@
           this.fading = null;
         }
       }
-      const facing = (s.facing || 1) * (rig.facesLeft ? -1 : 1);
+      // During a turn each step keeps the way it faces, so it mirrors only at the front view.
+      const facing = (step ? step.facing : facingNow) * (rig.facesLeft ? -1 : 1);
       this.root.scale.x = facing;
       // A `still` pose (curled up asleep) keeps its place: no bob, squash or lean.
       this.body.y = rig.still ? 0 : p.bob + p.sit * rig.sitDrop;
@@ -332,17 +441,42 @@
         const t = Math.min(1, Math.max(0, (p.mouth - 0.15) / 0.2));
         rig.openFrame.alpha = t * t * (3 - 2 * t);
       }
+      // Blush, glow and temper ease in and out rather than switching.
+      const md = this.mood;
+      const ease = 1 - Math.exp(-dt * 8);
+      md.blush += ((p.blush || 0) - md.blush) * ease;
+      md.glow += ((p.glow || 0) - md.glow) * ease;
+      md.angry += ((p.mood === 'angry' ? 1 : 0) - md.angry) * ease;
+      if (rig.blush) rig.blush.alpha = md.blush;
+      if (rig.brows) rig.brows.alpha = md.angry;
+      this.glow.visible = md.glow > 0.01;
+      if (this.glow.visible) {
+        this.glow.tint = mix(0xffb347, 0xff2a1a, md.angry);
+        this.glow.alpha = md.glow * (0.8 + 0.2 * Math.sin(this.T * 6));
+        // Behind the head only: from the top of the flame down to the neck.
+        const neckY = rig.headY + 40;
+        const headH = neckY - rig.headTop;
+        this.glow.position.set(0, this.body.y + (rig.headTop + neckY) / 2);
+        this.glow.scale.set((rig.halfWidth * 2.8) / 256, (headH * 1.45) / 256);
+      }
+
+      // One shared clock, so the spirals keep turning smoothly across drawings.
+      for (const sp of rig.spinners) sp.view.rotation = this.T * sp.speed;
+
       if (rig.flame) {
-        const k = s.anim === 'sleep' ? 0.4 : p.mood === 'surprised' ? 1.8 : 1;
-        const t = this.T;
+        const k = s.anim === 'sleep' ? 0.4 : p.mood === 'surprised' ? 1.8 : 1 + md.angry * 1.6;
+        const t = this.T * (1 + md.angry * 0.8);
+        const big = 1 + md.glow * 0.12 + md.angry * 0.12;
         rig.flame.scale.set(
-          1 + k * 0.015 * (1 + Math.sin(t * 7.3 + 1)),
-          1 + k * (0.04 + 0.025 * Math.sin(t * 9.1) + 0.012 * Math.sin(t * 23.7)),
+          big * (1 + k * 0.015 * (1 + Math.sin(t * 7.3 + 1))),
+          big * (1 + k * (0.04 + 0.025 * Math.sin(t * 9.1) + 0.012 * Math.sin(t * 23.7))),
         );
+        rig.flame.children[0].tint = mix(0xffffff, 0xff6a50, md.angry); // hotter when cross
       }
 
       const look = DM.face.gaze(this.look, dt, s.cursor, [this.view.x, this.view.y + this.body.y + rig.headY], facing);
-      const open = p.eyes ?? this.blink(dt);
+      const open = p.mood === 'angry' ? 1 : p.eyes ?? this.blink(dt);
+      if (rig.blinkFrame) rig.blinkFrame.visible = open < 0.35;
 
       if (rig.faceMode === 'sprites') {
         const e = rig.eyeSprites.map;

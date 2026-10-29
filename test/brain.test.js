@@ -145,16 +145,16 @@ test('a quick yawn while awake stands; only bedtime curls up, and it will not na
   assert.ok(!seen.has('sleep') && !seen.has('liedown'), 'napped again right after waking');
 });
 
-test('rubbing the head makes it happy', () => {
+test('rubbing the head makes it happy (patted: blushing)', () => {
   const b = make();
   landed(b);
   b.send('force', { state: 'sit' });
   b.update(DT, { area: AREA, cursor: FAR });
   const head = { x: b.center().x, y: b.pos.y + 400 - 214 * 0.75 };
-  for (let i = 0; i < 180 && b.state !== 'happy'; i++) {
+  for (let i = 0; i < 180 && b.state !== 'patted'; i++) {
     b.update(DT, { area: AREA, cursor: { x: head.x + Math.sin(i / 3) * 20, y: head.y } });
   }
-  assert.equal(b.state, 'happy');
+  assert.equal(b.state, 'patted');
 });
 
 test('falls when the floor drops away (taskbar hidden)', () => {
@@ -215,7 +215,7 @@ test('waves hi once after the first landing, not after later ones', () => {
   assert.notEqual(b.state, 'greet');
 });
 
-test('a click on the standing companion makes it happy', () => {
+test('a click on the standing companion makes it happy (patted: blushing)', () => {
   const b = make(2);
   run(b, 6);
   const c = { x: b.pos.x + 150, y: b.pos.y + 300 };
@@ -224,7 +224,117 @@ test('a click on the standing companion makes it happy', () => {
   run(b, DT, c);
   b.send('drag-end');
   run(b, DT, c);
-  assert.equal(b.state, 'happy');
+  assert.equal(b.state, 'patted');
+});
+
+function click(b) {
+  const c = { x: b.pos.x + 150, y: b.pos.y + 300 };
+  run(b, DT, c);
+  b.send('drag-start');
+  run(b, DT, c);
+  b.send('drag-end');
+  run(b, DT, c);
+}
+
+test('clicks spaced out are pats; a flurry makes it mad and meow, and it calms down after', () => {
+  const b = make(2);
+  run(b, 6);
+  b.send('force', { state: 'idle' });
+  run(b, DT);
+  for (let i = 0; i < 3; i++) {
+    click(b);
+    assert.equal(b.state, 'patted');
+    run(b, 2);
+  }
+  assert.equal(b.meows, 0);
+  for (let i = 0; i < 4; i++) {
+    click(b);
+    run(b, 0.2);
+  }
+  assert.equal(b.state, 'mad');
+  assert.equal(b.meows, 1);
+  for (let i = 0; i < 3; i++) {
+    run(b, 0.5);
+    click(b); // still pestering: stays mad and meows again
+    assert.equal(b.state, 'mad');
+  }
+  assert.ok(b.meows >= 2, `meowed ${b.meows} times`);
+  run(b, 3.5);
+  assert.notEqual(b.state, 'mad');
+  b.send('force', { state: 'idle' });
+  run(b, DT);
+  click(b);
+  assert.equal(b.state, 'patted');
+});
+
+function drag(b, path) {
+  let cursor = { x: b.pos.x + 150, y: b.pos.y + 300 };
+  run(b, DT, cursor);
+  b.send('drag-start');
+  run(b, DT, cursor);
+  for (const p of path) {
+    cursor = p(cursor);
+    run(b, DT, cursor);
+  }
+  b.send('drag-end');
+  run(b, DT, cursor);
+  return cursor;
+}
+
+test('swung round in circles and dropped, it lands dizzy, shakes it off and recovers', () => {
+  const b = make(6);
+  run(b, 6);
+  b.send('force', { state: 'idle' });
+  run(b, DT);
+  // Two circles of radius 120, ~0.5 s each.
+  const start = { x: b.pos.x + 150, y: b.pos.y + 300 - 200 };
+  const circle = Array.from({ length: 60 }, (_, i) => () => ({
+    x: start.x + Math.cos((i / 30) * 2 * Math.PI) * 120,
+    y: start.y + Math.sin((i / 30) * 2 * Math.PI) * 120,
+  }));
+  const cursor = drag(b, circle);
+  assert.equal(b.state, 'fall');
+  const seen = [];
+  for (let t = 0; t < 8; t += DT) {
+    b.update(DT, { area: AREA, cursor });
+    if (seen.at(-1) !== b.state) seen.push(b.state);
+  }
+  assert.deepEqual(seen.slice(0, 5), ['fall', 'land', 'dizzy', 'shakeOff', 'recover']);
+  assert.equal(seen[5], 'idle');
+});
+
+test('dizzy faces the way it was flung, even after bouncing off a screen edge', () => {
+  for (const dir of [-1, 1]) {
+    const b = make(6);
+    run(b, 6);
+    b.send('force', { state: 'idle' });
+    run(b, DT);
+    const o = { x: b.pos.x + 150, y: b.pos.y + 100 };
+    const circle = Array.from({ length: 60 }, (_, i) => () => ({
+      x: o.x + Math.cos((i / 30) * 2 * Math.PI) * 120,
+      y: o.y + Math.sin((i / 30) * 2 * Math.PI) * 120,
+    }));
+    const fling = Array.from({ length: 6 }, () => (c) => ({ x: c.x + dir * 40, y: c.y }));
+    const cursor = drag(b, [...circle, ...fling]);
+    for (let t = 0; t < 3 && b.state !== 'dizzy'; t += DT) b.update(DT, { area: AREA, cursor });
+    assert.equal(b.state, 'dizzy');
+    assert.equal(b.facing, dir);
+  }
+});
+
+test('a plain throw or shaking back and forth does not make it dizzy', () => {
+  const b = make(6);
+  run(b, 6);
+  b.send('force', { state: 'idle' });
+  run(b, DT);
+  const shake = Array.from({ length: 60 }, (_, i) => (c) => ({ x: c.x + (Math.floor(i / 6) % 2 ? -25 : 25), y: c.y - 2 }));
+  const cursor = drag(b, shake);
+  const seen = new Set();
+  for (let t = 0; t < 5; t += DT) {
+    b.update(DT, { area: AREA, cursor });
+    seen.add(b.state);
+  }
+  assert.ok(seen.has('land') && !seen.has('dizzy'));
 });
 
 test('a nap lasts at least a minute even when not tired', () => {

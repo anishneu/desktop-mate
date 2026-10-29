@@ -1,11 +1,11 @@
-// Floating emote next to the head: "!", "♥", "zzz", "~", "!?".
+// Floating emote next to the head: "!", "♥", "zzz", "~", "!?", "MEOW!", "💢".
 (function () {
-  const COLORS = { zzz: 0x8a74d6, '~': 0x8a74d6 };
+  const COLORS = { zzz: 0x8a74d6, '~': 0x8a74d6, 'MEOW!': 0xe8402a };
 
   class FxLayer {
     constructor(parent) {
       this.text = new PIXI.Text('', {
-        fontFamily: 'Segoe UI, sans-serif',
+        fontFamily: 'Segoe UI, Segoe UI Emoji, sans-serif',
         fontSize: 26,
         fontWeight: '700',
         fill: 0xff6f9c,

@@ -10,8 +10,10 @@
       bob: 0, squash: 1, lean: 0, sit: 0, headTilt: 0,
       legL: 0, legR: 0, armL: 0.15, armR: 0.15,
       eyes: null, // null = auto-blink, otherwise 0 (closed) … 1 (open)
-      mood: 'neutral', // neutral | happy | surprised | sleepy
+      mood: 'neutral', // neutral | happy | surprised | sleepy | angry
       mouth: 0,
+      blush: 0, // 0 … 1, pink cheeks
+      glow: 0, // 0 … 1, a halo around the body (red when angry)
       fx: null, // emote above the head
     };
   }
@@ -28,13 +30,15 @@
       case 'walk':
       case 'run': {
         const f = anim === 'run' ? 17 : 10;
-        const w = Math.sin(T * f);
+        // Ease into the stride instead of starting mid-step.
+        const e = clamp(at / 0.3, 0, 1);
+        const w = Math.sin(T * f) * e * e * (3 - 2 * e);
         p.legL = w * 0.5;
         p.legR = -w * 0.5;
         p.armL = 0.2 + w * 0.25;
         p.armR = 0.2 - w * 0.25;
-        p.bob = -Math.abs(Math.cos(T * f)) * 3;
-        p.lean = anim === 'run' ? 0.15 : 0.04;
+        p.bob = -Math.abs(Math.cos(T * f)) * 3 * e;
+        p.lean = (anim === 'run' ? 0.15 : 0.04) * e;
         if (anim === 'run') p.mood = 'surprised';
         break;
       }
@@ -135,12 +139,27 @@
         p.fx = 'hi!';
         break;
       case 'happy':
+      case 'patted': // happy because you clicked or petted it: blushes and glows too
         p.bob = -Math.abs(Math.sin(T * 7)) * 12;
         p.armL = p.armR = 2.2 + Math.sin(T * 7) * 0.2;
         p.mood = 'happy';
         p.mouth = 0.35;
+        p.blush = p.glow = anim === 'patted' ? 1 : 0;
         p.fx = '♥';
         break;
+      case 'mad': {
+        // Puffed up and trembling; each meow opens the mouth wide.
+        const m = clamp((s.meowAge ?? 9) / 0.6, 0, 1);
+        p.bob = -Math.abs(Math.sin(T * 13)) * 3;
+        p.lean = Math.sin(T * 38) * 0.025;
+        p.squash = 0.96;
+        p.headTilt = Math.sin(T * 31) * 0.03;
+        p.mood = 'angry';
+        p.mouth = m < 1 ? Math.sin(Math.PI * m) * 0.9 : 0;
+        p.glow = 1;
+        p.fx = m < 1 ? 'MEOW!' : '💢';
+        break;
+      }
       case 'talk':
         p.bob = breathe * 1.2;
         p.mouth = Math.max(0, Math.sin(T * 15)) * 0.5;

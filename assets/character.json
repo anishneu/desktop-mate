@@ -13,6 +13,7 @@
     "motions": {
       "idle": { "group": "Idle" },
       "happy": { "group": "TapBody" },
+      "patted": { "group": "TapBody" },
       "startled": { "group": "TapBody" }
     }
   }

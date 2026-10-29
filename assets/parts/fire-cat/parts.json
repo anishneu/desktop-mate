@@ -24,7 +24,28 @@
       "smile": "mouth_closed.png",
       "open": "mouth_open.png",
       "wide": "mouth_wide.png"
-    }
+    },
+    "blush": [
+      [388, 548],
+      [624, 548]
+    ],
+    "blushSize": 42,
+    "brows": [
+      [
+        336,
+        410,
+        478,
+        464
+      ],
+      [
+        676,
+        410,
+        534,
+        464
+      ]
+    ],
+    "fur": "#363538",
+    "lid": "#2d0c0a"
   },
   "facesLeft": false,
   "poses": [
@@ -117,24 +138,25 @@
     {
       "anims": ["walk"],
       "quadruped": true,
-      "height": 213,
-      "feet": [490, 903],
+      "height": 226,
+      "feet": [460, 915],
       "parts": {
         "legLeft": "walk_legLeft.png",
         "legRight": "walk_legRight.png",
-        "armLeft": "walk_armLeft.png",
         "armRight": "walk_armRight.png",
+        "armLeft": "walk_armLeft.png",
         "tail": "walk_tail.png",
         "torso": "walk_body.png",
-        "flame": "walk_flame.png"
+        "flame": "walk_flame.png",
+        "blink": "walk_blink.png"
       },
       "pivots": {
-        "hipLeft": [300, 765],
-        "hipRight": [480, 768],
-        "shoulderLeft": [722, 755],
-        "shoulderRight": [640, 755],
-        "tail": [335, 618],
-        "flame": [832, 426]
+        "hipLeft": [312, 772],
+        "hipRight": [395, 775],
+        "shoulderRight": [565, 778],
+        "shoulderLeft": [632, 772],
+        "tail": [298, 655],
+        "flame": [700, 385]
       }
     },
     {
@@ -147,15 +169,205 @@
         "cling",
         "descend"
       ],
+      "step": 0,
       "lean": 0,
-      "height": 221,
-      "feet": [501, 919],
+      "height": 227,
+      "feet": [460, 924],
       "parts": {
         "torso": "turn_body.png",
         "flame": "turn_flame.png"
       },
       "pivots": {
-        "flame": [797, 339]
+        "flame": [507, 410]
+      }
+    },
+    {
+      "transition": [
+        "walk",
+        "run",
+        "pounce",
+        "touchdown",
+        "climb",
+        "cling",
+        "descend"
+      ],
+      "step": 1,
+      "lean": 0,
+      "height": 227,
+      "feet": [460, 925],
+      "parts": {
+        "torso": "turn2_body.png",
+        "flame": "turn2_flame.png"
+      },
+      "pivots": {
+        "flame": [673, 398]
+      }
+    },
+    {
+      "anims": ["dizzy"],
+      "to": 0.7,
+      "height": 237,
+      "feet": [520, 969],
+      "parts": {
+        "torso": "dizzy_body.png",
+        "flame": "dizzy_flame.png"
+      },
+      "pivots": {
+        "flame": [634, 364]
+      },
+      "spin": [
+        {
+          "part": "dizzy_eyeL.png",
+          "at": [555.5, 461.5],
+          "squash": [0.959, 1.0],
+          "speed": 5.0
+        },
+        {
+          "part": "dizzy_eyeR.png",
+          "at": [699.5, 439.5],
+          "squash": [0.843, 1.0],
+          "speed": 5.0
+        }
+      ]
+    },
+    {
+      "anims": ["dizzy"],
+      "from": 0,
+      "to": 0.45,
+      "loop": 1.8,
+      "height": 237,
+      "feet": [520, 968],
+      "parts": {
+        "torso": "dizzy_a_body.png",
+        "flame": "dizzy_a_flame.png"
+      },
+      "pivots": {
+        "flame": [632, 364]
+      },
+      "spin": [
+        {
+          "part": "dizzy_eyeL.png",
+          "at": [555.5, 461.5],
+          "squash": [0.959, 1.0],
+          "speed": 5.0
+        },
+        {
+          "part": "dizzy_eyeR.png",
+          "at": [699.5, 439.5],
+          "squash": [0.843, 1.0],
+          "speed": 5.0
+        }
+      ]
+    },
+    {
+      "anims": ["dizzy"],
+      "from": 0.45,
+      "to": 0.9,
+      "loop": 1.8,
+      "height": 237,
+      "feet": [520, 967],
+      "parts": {
+        "torso": "dizzy_b_body.png",
+        "flame": "dizzy_b_flame.png"
+      },
+      "pivots": {
+        "flame": [425, 441]
+      },
+      "spin": [
+        {
+          "part": "dizzy_eyeL.png",
+          "at": [555.5, 461.5],
+          "squash": [0.959, 1.0],
+          "speed": 5.0
+        },
+        {
+          "part": "dizzy_eyeR.png",
+          "at": [699.5, 439.5],
+          "squash": [0.843, 1.0],
+          "speed": 5.0
+        }
+      ]
+    },
+    {
+      "anims": ["dizzy"],
+      "from": 0.9,
+      "to": 1.35,
+      "loop": 1.8,
+      "height": 237,
+      "feet": [520, 967],
+      "parts": {
+        "torso": "dizzy_c_body.png",
+        "flame": "dizzy_c_flame.png"
+      },
+      "pivots": {
+        "flame": [425, 440]
+      },
+      "spin": [
+        {
+          "part": "dizzy_eyeL.png",
+          "at": [555.5, 461.5],
+          "squash": [0.959, 1.0],
+          "speed": 5.0
+        },
+        {
+          "part": "dizzy_eyeR.png",
+          "at": [699.5, 439.5],
+          "squash": [0.843, 1.0],
+          "speed": 5.0
+        }
+      ]
+    },
+    {
+      "anims": ["shakeOff"],
+      "height": 241,
+      "feet": [520, 967],
+      "parts": {
+        "torso": "shake_off_body.png",
+        "flame": "shake_off_flame.png"
+      },
+      "pivots": {
+        "flame": [580, 358]
+      }
+    },
+    {
+      "anims": ["dizzy"],
+      "from": 1.35,
+      "to": 1.8,
+      "loop": 1.8,
+      "height": 237,
+      "feet": [520, 967],
+      "parts": {
+        "torso": "dizzy_b_body.png",
+        "flame": "dizzy_b_flame.png"
+      },
+      "pivots": {
+        "flame": [425, 441]
+      },
+      "spin": [
+        {
+          "part": "dizzy_eyeL.png",
+          "at": [555.5, 461.5],
+          "squash": [0.959, 1.0],
+          "speed": 5.0
+        },
+        {
+          "part": "dizzy_eyeR.png",
+          "at": [699.5, 439.5],
+          "squash": [0.843, 1.0],
+          "speed": 5.0
+        }
+      ]
+    },
+    {
+      "anims": ["recover"],
+      "height": 236,
+      "feet": [512, 995],
+      "parts": {
+        "torso": "recover_body.png",
+        "flame": "recover_flame.png"
+      },
+      "pivots": {
+        "flame": [507, 381]
       }
     },
     {

@@ -222,6 +222,29 @@ const STATES = {
     },
   },
 
+  // Happy because you clicked or petted it, rather than on its own (a visit, a timer).
+  patted: {
+    anim: 'patted', surface: 'floor', interruptible: false,
+    update(b) {
+      if (b.stateTime > 1.8) return 'idle';
+    },
+  },
+
+  // Clicked too many times: puffs up and meows. More clicks keep it cross a little longer.
+  mad: {
+    anim: 'mad', surface: 'floor', interruptible: false,
+    enter(b) {
+      b.faceCursor();
+      b.meow();
+      b.madUntil = Math.max(b.madUntil, b.time + 1); // when forced rather than clicked
+    },
+    update(b) {
+      if (b.time < b.madUntil) return;
+      b.clicks = []; // calmed down: the next click is a pat again
+      return 'idle';
+    },
+  },
+
   talk: {
     anim: 'talk', surface: 'floor', interruptible: false,
     update(b) {
@@ -233,6 +256,10 @@ const STATES = {
     anim: 'land', surface: 'floor', interruptible: false,
     update(b) {
       if (b.stateTime <= 0.6) return; // brace, then splat
+      if (b.dizzy) {
+        b.dizzy = false;
+        return 'dizzy';
+      }
       if (b.greeted) return 'idle';
       b.greeted = true; // the first landing after launch: say hi
       return 'greet';
@@ -256,6 +283,40 @@ const STATES = {
       b.pos.x = c.x - g.dx;
       b.pos.y = c.y - g.dy;
       if (!g.moved && Math.hypot(c.x - g.x0, c.y - g.y0) > 6) g.moved = true;
+      // Swinging it round in circles: add up how far the direction of motion
+      // turns. Circles keep adding up; shaking back and forth mostly cancels out.
+      if (c.speed > 250) {
+        const heading = Math.atan2(c.vy, c.vx);
+        if (g.heading !== undefined) {
+          let d = heading - g.heading;
+          d -= Math.round(d / (2 * Math.PI)) * 2 * Math.PI;
+          g.turned += d;
+        }
+        g.heading = heading;
+      }
+    },
+  },
+
+  // Spun round on a drag and dropped: wobbles with spiral eyes, shakes it off, comes round.
+  dizzy: {
+    anim: 'dizzy', surface: 'floor', interruptible: false,
+    enter(b) { b.facing = b.thrown || b.facing; }, // still heading the way it was thrown
+    update(b) {
+      if (b.stateTime > 3) return 'shakeOff';
+    },
+  },
+
+  shakeOff: {
+    anim: 'shakeOff', surface: 'floor', interruptible: false,
+    update(b) {
+      if (b.stateTime > 0.7) return 'recover';
+    },
+  },
+
+  recover: {
+    anim: 'recover', surface: 'floor', interruptible: false,
+    update(b) {
+      if (b.stateTime > 1.2) return 'idle';
     },
   },
 

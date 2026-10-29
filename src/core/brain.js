@@ -21,6 +21,9 @@ const DEFAULT_TUNING = {
   startleRadius: 130,
   curiosityRadius: 480,
   maxThrow: 1800,
+  madClicks: 4, // this many clicks within madWindow seconds make it cross
+  madWindow: 2.5,
+  dizzyTurns: 1.5, // swing it round this many circles on a drag and it lands dizzy
 };
 
 function weighted(rng, options) {
@@ -50,6 +53,11 @@ class Brain {
     this.time = 0;
     this.speechUntil = 0;
     this.grab = null;
+    this.clicks = []; // times of recent clicks, to tell a pat from pestering
+    this.madUntil = 0;
+    this.meows = 0; // counts meows so the renderer knows when to play one
+    this.lastMeow = -Infinity;
+    this.dizzy = false; // spun round on the last drag: dizzy when it lands
     this.enter('fall'); // drop in from the top of the screen
   }
 
@@ -171,6 +179,8 @@ class Brain {
       x: Math.round(this.pos.x),
       y: Math.round(this.pos.y),
       vx: this.state === 'dragged' ? this.cursor.vx : this.vel.x,
+      meows: this.meows,
+      meowAge: Math.round((this.time - this.lastMeow) * 1000) / 1000,
     };
   }
 
@@ -201,13 +211,16 @@ class Brain {
         const c = this.cursor;
         this.grab = {
           dx: c.x - this.pos.x, dy: c.y - this.pos.y, x0: c.x, y0: c.y,
-          prev: this.state, prevAnim: this.anim, moved: false,
+          prev: this.state, prevAnim: this.anim, moved: false, turned: 0,
         };
         this.enter('dragged');
       } else if (e.type === 'drag-end' && this.state === 'dragged') {
         if (this.grab.moved) {
           const m = this.tuning.maxThrow;
           this.vel = { x: clamp(this.cursor.vx, -m, m), y: clamp(this.cursor.vy, -m, m) };
+          this.dizzy = Math.abs(this.grab.turned) >= this.tuning.dizzyTurns * 2 * Math.PI;
+          // The way it was flung, kept for the dizzy pose even if it bounces off an edge.
+          this.thrown = Math.sign(this.vel.x) || this.facing;
           this.enter('fall');
         } else {
           this.enter(this.poked(this.grab.prev));
@@ -234,7 +247,21 @@ class Brain {
     const surface = STATES[prev].surface;
     if (surface === 'wall') return 'cling';
     if (surface === 'air') return 'fall';
-    return 'happy';
+    // One pat at a time is nice; a flurry of clicks makes it cross.
+    const t = this.tuning;
+    this.clicks = [...this.clicks.filter((c) => this.time - c < t.madWindow), this.time];
+    if (prev === 'mad' || this.clicks.length >= t.madClicks) {
+      this.madUntil = prev === 'mad' ? Math.min(this.time + 3, this.madUntil + 0.8) : this.time + 2.4;
+      return 'mad';
+    }
+    return 'patted';
+  }
+
+  // Meows at most every 0.8 s, however fast the clicks come.
+  meow() {
+    if (this.time - this.lastMeow < 0.8) return;
+    this.lastMeow = this.time;
+    this.meows++;
   }
 
   // Cursor reactions that may interrupt the current state.
@@ -262,7 +289,7 @@ class Brain {
       this.pet += dt * 1.6;
       if (this.pet > 1.5) {
         this.pet = 0;
-        return 'happy';
+        return 'patted';
       }
     }
 
