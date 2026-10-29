@@ -24,6 +24,7 @@ const DEFAULT_TUNING = {
   madClicks: 4, // this many clicks within madWindow seconds make it cross
   madWindow: 2.5,
   dizzyTurns: 1.5, // swing it round this many circles on a drag and it lands dizzy
+  headCircles: 2, // circle the cursor round its head this many times and it gets dizzy where it sits
 };
 
 function weighted(rng, options) {
@@ -58,6 +59,7 @@ class Brain {
     this.meows = 0; // counts meows so the renderer knows when to play one
     this.lastMeow = -Infinity;
     this.dizzy = false; // spun round on the last drag: dizzy when it lands
+    this.circle = { turned: 0, idle: 0 }; // the cursor circling its head
     this.enter('fall'); // drop in from the top of the screen
   }
 
@@ -101,6 +103,13 @@ class Brain {
   }
 
   faceCursor() { this.facing = this.cursor.x < this.center().x ? -1 : 1; }
+
+  // The cursor resting on the cat's body (not passing over it).
+  hovered() {
+    const c = this.cursor;
+    const bottom = this.pos.y + this.win.height;
+    return Math.abs(c.x - this.center().x) < this.hit.width * 0.45 && c.y > bottom - this.hit.height && c.y < bottom && c.speed < 400;
+  }
 
   // Moves along the floor; returns true once x is reached.
   walkToward(x, speed, dt) {
@@ -170,6 +179,7 @@ class Brain {
     if (area) this.area = area;
     if (cursor) this.sampleCursor(dt, cursor);
     this.time += dt;
+    this.dt = dt;
     this.stateTime += dt;
     for (const k of Object.keys(this.cooldowns)) this.cooldowns[k] -= dt;
     const t = this.tuning;
@@ -298,12 +308,40 @@ class Brain {
 
     // Petting: rubbing the cursor over the head.
     const head = { x: this.center().x, y: this.pos.y + this.win.height - this.hit.height * 0.75 };
+
+    // Circling the cursor round its head: add up how far the cursor's angle about
+    // the head turns. Rubbing back and forth cancels out; circles keep adding up.
+    const r = Math.hypot(c.x - head.x, c.y - head.y);
+    const angle = Math.atan2(c.y - head.y, c.x - head.x);
+    if (['idle', 'sit', 'purr'].includes(this.state) && r > 30 && r < 170 && c.speed > 150) {
+      if (this.circle.angle !== undefined) {
+        let d = angle - this.circle.angle;
+        d -= Math.round(d / (2 * Math.PI)) * 2 * Math.PI;
+        // A big jump is the cursor cutting across the head (rubbing), not going round it.
+        if (Math.abs(d) < 1.2) this.circle.turned += d;
+      }
+      this.circle.angle = angle;
+      this.circle.idle = 0;
+      if (Math.abs(this.circle.turned) >= this.tuning.headCircles * 2 * Math.PI) {
+        this.circle = { turned: 0, idle: 0 };
+        return 'headDizzy';
+      }
+    } else if ((this.circle.idle += dt) > 0.5) {
+      this.circle = { turned: 0, idle: 0 }; // stopped circling, or wandered off
+    }
     if (Math.hypot(c.x - head.x, c.y - head.y) < 55 && c.speed > 120 && c.speed < 1500) {
       this.pet += dt * 1.6;
       if (this.pet > 1.5) {
         this.pet = 0;
         return 'patted';
       }
+    }
+
+    // Hovering: a cursor resting on it for a moment makes it purr.
+    this.hover = this.hovered() && ['idle', 'sit', 'walk'].includes(this.state) ? (this.hover || 0) + dt : 0;
+    if (this.hover > 0.35) {
+      this.hover = 0;
+      return 'purr';
     }
 
     // Curiosity: a cursor resting nearby gets a visit now and then.

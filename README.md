@@ -57,11 +57,14 @@ Author: Anish Kuila
 | Interaction | What happens |
 |---|---|
 | Fast swipe straight at the cat | Startled (arched back, hissing), then often runs away from the cursor. On a wall, it falls off. Moving the mouse around beside it doesn't scare it, and it won't startle again for 15 seconds. |
+| Cursor moving around it | Nothing: it stays the way it's facing and only its eyes follow. Its tail keeps swishing on its own. |
 | Cursor resting nearby | Walks over to it, curious |
+| Cursor resting on the cat | Stays put and smiles (^ ^ eyes) while its tail waves in a curly S, the root half one way and the tip half the other. It no longer turns round as the cursor moves across it. |
 | Rub the cursor over its head | Happy: ^ ^ eyes, a smile, a heart, blushing cheeks and a warm glow |
 | Click | One click at a time: happy, with blushing cheeks, a warm glow and a bigger flame. Wakes it up if asleep. |
 | Click over and over | It gets cross: puffs up, glares, glows red and meows (right-click → **Sounds** to mute). More clicks keep it cross a little longer; it calms down a few seconds after you stop. |
 | Drag and release | Dangles from the scruff, swinging as you move it, then is thrown with your mouse's speed |
+| Circle the cursor round its head (about twice) | Gets dizzy right where it sits: spiral eyes spinning, a ring of stars, the head wobbling and a paw lifting to keep its balance. Then it comes round, dazed, and carries on. Rubbing back and forth over its head is still a pat. |
 | Swing it round in circles, then let go | Lands dizzy: spiral eyes spinning, stars round its head, head wobbling. Then it shakes it off, sits there dazed for a moment and carries on. |
 | Double-click or **Ctrl+Alt+M** | Opens the command box |
 | Right-click | Menu: talk, actions (walk, sit, yawn, sleep, climb, cheer), toggle wandering, sounds on/off, quit |
@@ -71,7 +74,7 @@ Author: Anish Kuila
 - **Walking:** a side view whose four legs swing in a diagonal gait. It blinks as it walks, eases into its stride, and turns in steps through a front-standing and a three-quarter view (also when it turns round to walk the other way).
 - **Running:** a two-drawing gallop that alternates stretched and gathered.
 - **Climbing:** front paws and back legs alternate as it climbs. Climbing down has its own head-first drawing, then the two gallop drawings for the leap and the landing.
-- **Other poses:** startled, dangling, falling, landing, waving, yawning, lying down, sleeping, the five-step wake-up, dizzy (four drawings), shaking it off and the dazed recovery each have their own drawing.
+- **Other poses:** startled, dangling, falling, landing, waving, yawning, lying down, sleeping, the five-step wake-up, dizzy after a spin (four drawings), dizzy where it sits (three), shaking it off and the two dazed recoveries each have their own drawing.
 - **Turning:** going from facing you to side-on (and back) steps through a front-standing and a three-quarter drawing, all edits of one image so the body stays the same size.
 - **Moods without new drawings:** blush, an orange or red glow, angry brows and the closed-eye blink on the walk are drawn or overlaid in code. The spiral eyes on the dizzy drawings are cut out and spun.
 
@@ -79,7 +82,7 @@ Every drawing also gets procedural motion so it never looks frozen:
 
 | Part | Motion |
 |---|---|
-| Tail | sways: wags when happy, flails when falling, barely moves when asleep |
+| Tail | sways: wags when happy, flails when falling, barely moves when asleep. On the front view it's the drawn tail straightened into one strip and bent smoothly along a curve every frame (a rope), so it's one continuous piece with no joints. It swings over the cat's back, centred on straight up, from one side to the other and back; the rest of the tail trails the base, so it bends into an S, and at each end the curl flips over from the root to the tip, so it always curls outward. Its motion settings are in `parts.json` (`tailMotion`). |
 | Flame | flickers, calms while sleeping, flares when startled, grows when happy, burns red and wild when cross |
 | Whole body | bounces, sways, breathes, or trembles depending on the pose |
 | Dangling drawing | swings from the top like a pendulum, following how fast you drag it |
@@ -129,16 +132,16 @@ Counted directly from the codebase, not estimated:
 
 | Metric | Count |
 |---|---|
-| Behavior states | 29 |
-| Animation names | 26 |
+| Behavior states | 32 |
+| Animation names | 29 |
 | Avatar types | 3 (parts, Live2D, placeholder) |
-| AI-generated source images for the fire cat | 37 (28 in use) |
-| Pose drawings (per-animation rigs) | 21, plus 2 turn steps |
-| PNG layers in the fire cat | 78 |
-| Cursor reactions | 4, plus click, click flurry, drag/throw and spin |
+| AI-generated source images for the fire cat | 48 (33 in use) |
+| Pose drawings (per-animation rigs) | 25, plus 2 turn steps |
+| PNG layers in the fire cat | 91 |
+| Cursor reactions | 6, plus click, click flurry, drag/throw and spin |
 | Task tools | 6 (`help`, `set_timer`, `get_time`, `open_url`, `web_search`, `behave`) |
-| IPC channels | 11 |
-| Automated tests | 23, across 2 files |
+| IPC channels | 12 |
+| Automated tests | 26, across 2 files |
 | CI workflows | 2 (CI, release) |
 | Build targets | 2 (NSIS installer, portable exe) |
 
@@ -158,7 +161,7 @@ npm install
 npm start
 ```
 
-The fire cat drops onto your taskbar and waves. Right-click it for the menu, or press **Ctrl+Alt+M** to type a command.
+The fire cat drops onto your taskbar and waves. Running `npm start` again replaces a copy that's already running, so you always see the current code. Right-click it for the menu, or press **Ctrl+Alt+M** to type a command.
 
 Run the tests:
 
@@ -175,6 +178,7 @@ npm run snapshot -- --state=sleep
 - `--state=` forces a behavior state once the cat has landed.
 - `--delay=300` (milliseconds after forcing) catches short states like `land`.
 - `--anim=climb` shows an animation's drawing whatever the state, which is useful for wall and air poses.
+- `--frames=12 --every=100` saves a burst of pictures instead of one, to check motion.
 
 Build the Windows installer and portable exe into `dist/`:
 
@@ -213,7 +217,7 @@ desktop-mate/
 │   ├── character.json            Which avatar to load, window and hitbox size, tuning, Live2D motion map
 │   ├── parts/
 │   │   ├── template/             The vector chibi exported as parts, with GUIDE.png (joint diagram)
-│   │   └── fire-cat/             The fire cat: parts.json, 78 PNG layers, source_*.jpg (not packaged)
+│   │   └── fire-cat/             The fire cat: parts.json, 91 PNG layers, source_*.jpg (not packaged)
 │   ├── models/                   Live2D models (git-ignored; see its README)
 │   └── vendor/                   Live2D Cubism core (git-ignored; not redistributable)
 ├── src/
@@ -231,6 +235,7 @@ desktop-mate/
 │       ├── style.css
 │       ├── avatar/
 │       │   ├── pose.js           Procedural pose for every animation name
+│       │   ├── tail-rope.js      The smooth swishing tail (a rope), shared with the tail tuner
 │       │   ├── parts-avatar.js   Paper-doll rig: pose drawings, turns, gaits, tail, flame, faces, blush, glow, spinners
 │       │   ├── live2d-avatar.js  Live2D model driver
 │       │   ├── placeholder-avatar.js  Vector chibi fallback

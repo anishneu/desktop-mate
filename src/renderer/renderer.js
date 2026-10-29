@@ -23,6 +23,7 @@
   const avatar = await createAvatar(cfg);
   avatar.view.position.set(W / 2, H - 2);
   app.stage.addChild(avatar.view);
+  api.ready(); // the brain starts now, so the drop-in from the top is seen
 
   // --- animation ----------------------------------------------------------------
 

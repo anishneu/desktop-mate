@@ -3,7 +3,7 @@
   "feet": [512, 916],
   "pivots": {
     "neck": [510, 590],
-    "tail": [614, 798],
+    "tail": [512, 790],
     "flame": [507, 398]
   },
   "parts": {
@@ -31,18 +31,8 @@
     ],
     "blushSize": 42,
     "brows": [
-      [
-        336,
-        410,
-        478,
-        464
-      ],
-      [
-        676,
-        410,
-        534,
-        464
-      ]
+      [336, 410, 478, 464],
+      [676, 410, 534, 464]
     ],
     "fur": "#363538",
     "lid": "#2d0c0a"
@@ -290,6 +280,35 @@
     },
     {
       "anims": ["dizzy"],
+      "from": 1.35,
+      "to": 1.8,
+      "loop": 1.8,
+      "height": 237,
+      "feet": [520, 967],
+      "parts": {
+        "torso": "dizzy_b_body.png",
+        "flame": "dizzy_b_flame.png"
+      },
+      "pivots": {
+        "flame": [425, 441]
+      },
+      "spin": [
+        {
+          "part": "dizzy_eyeL.png",
+          "at": [555.5, 461.5],
+          "squash": [0.959, 1.0],
+          "speed": 5.0
+        },
+        {
+          "part": "dizzy_eyeR.png",
+          "at": [699.5, 439.5],
+          "squash": [0.843, 1.0],
+          "speed": 5.0
+        }
+      ]
+    },
+    {
+      "anims": ["dizzy"],
       "from": 0.9,
       "to": 1.35,
       "loop": 1.8,
@@ -330,35 +349,6 @@
       }
     },
     {
-      "anims": ["dizzy"],
-      "from": 1.35,
-      "to": 1.8,
-      "loop": 1.8,
-      "height": 237,
-      "feet": [520, 967],
-      "parts": {
-        "torso": "dizzy_b_body.png",
-        "flame": "dizzy_b_flame.png"
-      },
-      "pivots": {
-        "flame": [425, 441]
-      },
-      "spin": [
-        {
-          "part": "dizzy_eyeL.png",
-          "at": [555.5, 461.5],
-          "squash": [0.959, 1.0],
-          "speed": 5.0
-        },
-        {
-          "part": "dizzy_eyeR.png",
-          "at": [699.5, 439.5],
-          "squash": [0.843, 1.0],
-          "speed": 5.0
-        }
-      ]
-    },
-    {
       "anims": ["recover"],
       "height": 236,
       "feet": [512, 995],
@@ -368,6 +358,161 @@
       },
       "pivots": {
         "flame": [507, 381]
+      }
+    },
+    {
+      "anims": ["headDizzy"],
+      "to": 0.7,
+      "height": 248,
+      "feet": [512, 995],
+      "parts": {
+        "torso": "idle_dizzy_body.png",
+        "flame": "idle_dizzy_flame.png"
+      },
+      "pivots": {
+        "flame": [507, 381]
+      },
+      "spin": [
+        {
+          "part": "idle_dizzy_eyeL.png",
+          "at": [408.0, 466.0],
+          "squash": [1.0, 1.0],
+          "speed": 5.0
+        },
+        {
+          "part": "idle_dizzy_eyeR.png",
+          "at": [603.5, 466.0],
+          "squash": [1.0, 0.991],
+          "speed": 5.0
+        }
+      ]
+    },
+    {
+      "anims": ["headDizzy"],
+      "to": 1.8,
+      "height": 248,
+      "feet": [512, 995],
+      "parts": {
+        "torso": "idle_dizzy_body.png",
+        "flame": "idle_dizzy_flame.png"
+      },
+      "pivots": {
+        "flame": [507, 381]
+      },
+      "from": 1.35,
+      "loop": 1.8,
+      "spin": [
+        {
+          "part": "idle_dizzy_eyeL.png",
+          "at": [408.0, 466.0],
+          "squash": [1.0, 1.0],
+          "speed": 5.0
+        },
+        {
+          "part": "idle_dizzy_eyeR.png",
+          "at": [603.5, 466.0],
+          "squash": [1.0, 0.991],
+          "speed": 5.0
+        }
+      ]
+    },
+    {
+      "anims": ["headDizzy"],
+      "to": 0.9,
+      "height": 248,
+      "feet": [512, 995],
+      "parts": {
+        "torso": "idle_dizzy_body.png",
+        "flame": "idle_dizzy_flame.png"
+      },
+      "pivots": {
+        "flame": [507, 381]
+      },
+      "from": 0.45,
+      "loop": 1.8,
+      "spin": [
+        {
+          "part": "idle_dizzy_eyeL.png",
+          "at": [408.0, 466.0],
+          "squash": [1.0, 1.0],
+          "speed": 5.0
+        },
+        {
+          "part": "idle_dizzy_eyeR.png",
+          "at": [603.5, 466.0],
+          "squash": [1.0, 0.991],
+          "speed": 5.0
+        }
+      ]
+    },
+    {
+      "anims": ["headDizzy"],
+      "from": 0,
+      "to": 0.45,
+      "loop": 1.8,
+      "height": 249,
+      "feet": [512, 995],
+      "parts": {
+        "torso": "idle_dizzy_tilt_body.png",
+        "flame": "idle_dizzy_tilt_flame.png"
+      },
+      "pivots": {
+        "flame": [528, 384]
+      },
+      "spin": [
+        {
+          "part": "idle_dizzy_tilt_eyeL.png",
+          "at": [409.0, 454.0],
+          "squash": [1.0, 1.0],
+          "speed": 5.0
+        },
+        {
+          "part": "idle_dizzy_tilt_eyeR.png",
+          "at": [603.5, 489.5],
+          "squash": [1.0, 0.981],
+          "speed": 5.0
+        }
+      ]
+    },
+    {
+      "anims": ["headDizzy"],
+      "from": 0.9,
+      "to": 1.35,
+      "loop": 1.8,
+      "height": 249,
+      "feet": [512, 995],
+      "parts": {
+        "torso": "idle_dizzy_sway_body.png",
+        "flame": "idle_dizzy_sway_flame.png"
+      },
+      "pivots": {
+        "flame": [528, 384]
+      },
+      "spin": [
+        {
+          "part": "idle_dizzy_tilt_eyeL.png",
+          "at": [409.0, 454.0],
+          "squash": [1.0, 1.0],
+          "speed": 5.0
+        },
+        {
+          "part": "idle_dizzy_tilt_eyeR.png",
+          "at": [603.5, 489.5],
+          "squash": [1.0, 0.981],
+          "speed": 5.0
+        }
+      ]
+    },
+    {
+      "anims": ["headRecover"],
+      "height": 243,
+      "feet": [512, 920],
+      "parts": {
+        "torso": "idle_recover_body.png",
+        "flame": "idle_recover_flame.png"
+      },
+      "pivots": {
+        "flame": [507, 408]
       }
     },
     {
@@ -551,5 +696,25 @@
       },
       "to": 0.8
     }
-  ]
+  ],
+  "tailSweep": true,
+  "tailRope": {
+    "texture": "tail_rope.png",
+    "points": [0.0, 106.55, 118.66, 130.14, 140.89, 151.19, 161.25, 171.18, 180.93, 190.3, 199.12, 207.42, 215.29, 222.87, 230.33, 237.86, 245.55, 253.37, 261.28, 269.36, 277.67, 286.12, 294.57, 302.9, 311.12, 319.23, 327.23, 335.06, 342.72, 350.24, 357.62, 364.86, 372.03, 379.25, 386.59, 394.05, 401.77, 410.0, 418.96, 428.61, 438.67, 448.93, 459.33, 469.88, 480.65, 492.09, 505.02, 519.03, 532.0, 543.14, 577.14],
+    "turns": [0.0, -0.1249, -0.064, -0.0946, -0.0855, -0.0797, -0.1029, -0.1281, -0.1351, -0.1275, -0.0976, -0.0492, -0.022, -0.0376, -0.0621, -0.0588, -0.0413, -0.0406, -0.0515, -0.0449, -0.0195, 0.0037, 0.0169, 0.0249, 0.0298, 0.033, 0.0407, 0.0555, 0.07, 0.0786, 0.0854, 0.0914, 0.0882, 0.0785, 0.0851, 0.1203, 0.1555, 0.1545, 0.125, 0.0922, 0.0675, 0.0546, 0.0604, 0.1102, 0.2121, 0.2554, 0.1651, 0.0393, -0.0394, -0.0],
+    "heading": 0.1421
+  },
+  "tailMotion": {
+    "speed": 3,
+    "range": 180,
+    "lean": 0,
+    "hold": 0,
+    "mode": "follow",
+    "curl": 1.5,
+    "lag": 32,
+    "mirror": true,
+    "drag": 0.011,
+    "ripple": 0.035,
+    "rspeed": 5.5
+  }
 }

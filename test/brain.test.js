@@ -181,6 +181,72 @@ test('rubbing the head makes it happy (patted: blushing)', () => {
   assert.equal(b.state, 'patted');
 });
 
+test('a cursor resting on it makes it purr without turning back and forth, and it stops when the cursor leaves', () => {
+  const b = make(2);
+  landed(b);
+  b.send('force', { state: 'idle' });
+  run(b, DT);
+  const facing = b.facing;
+  const body = { x: b.center().x, y: b.pos.y + 400 - 100 };
+  // Small movements across its middle, as a resting hand would make.
+  for (let i = 0; i < 90; i++) {
+    b.update(DT, { area: AREA, cursor: { x: body.x + Math.sin(i / 8) * 12, y: body.y } });
+    assert.equal(b.facing, facing, 'turned round under the cursor');
+  }
+  assert.equal(b.state, 'purr');
+  run(b, 1, FAR);
+  assert.equal(b.state, 'idle');
+});
+
+test('circling the cursor round its head makes it dizzy where it sits; rubbing back and forth does not', () => {
+  const b = make(2);
+  landed(b);
+  b.send('force', { state: 'idle' });
+  run(b, DT);
+  const head = () => ({ x: b.center().x, y: b.pos.y + 400 - 214 * 0.75 });
+  const h = head();
+  // Two and a bit circles of radius 90, ~0.6 s each.
+  const seen = [];
+  for (let i = 0; i < 80; i++) {
+    const a = (i / 36) * 2 * Math.PI;
+    b.update(DT, { area: AREA, cursor: { x: h.x + Math.cos(a) * 90, y: h.y + Math.sin(a) * 90 } });
+    if (seen.at(-1) !== b.state) seen.push(b.state);
+  }
+  assert.ok(seen.includes('headDizzy'), `went ${seen.join(' → ')}`);
+  for (let t = 0; t < 6; t += DT) {
+    b.update(DT, { area: AREA, cursor: FAR });
+    if (seen.at(-1) !== b.state) seen.push(b.state);
+  }
+  assert.deepEqual(seen.slice(-3), ['headDizzy', 'headRecover', 'idle']);
+
+  const c = make(2);
+  landed(c);
+  c.send('force', { state: 'idle' });
+  run(c, DT);
+  const ch = { x: c.center().x, y: c.pos.y + 400 - 214 * 0.75 };
+  const states = new Set();
+  for (let i = 0; i < 240; i++) {
+    c.update(DT, { area: AREA, cursor: { x: ch.x + Math.sin(i / 3) * 80, y: ch.y } });
+    states.add(c.state);
+  }
+  assert.ok(!states.has('headDizzy'), 'rubbing made it dizzy');
+});
+
+test('idle, it keeps facing the same way however the cursor moves past it', () => {
+  const b = make(2);
+  landed(b);
+  b.send('force', { state: 'idle' });
+  run(b, DT);
+  b.autonomous = false; // stay idle
+  const facing = b.facing;
+  const c = b.center();
+  for (let i = 0; i < 400; i++) {
+    b.update(DT, { area: AREA, cursor: { x: c.x + Math.sin(i / 25) * 350, y: c.y - 250 } });
+    if (b.state !== 'idle') break;
+    assert.equal(b.facing, facing, 'turned to follow the cursor');
+  }
+});
+
 test('falls when the floor drops away (taskbar hidden)', () => {
   const b = make();
   landed(b);

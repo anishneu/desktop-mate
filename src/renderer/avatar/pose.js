@@ -138,6 +138,11 @@
         p.mouth = 0.35;
         p.fx = 'hi!';
         break;
+      case 'purr': // the cursor resting on it: a contented smile, leaning into it
+        p.bob = breathe * 1.2;
+        p.mood = 'happy';
+        p.headTilt = Math.sin(T * 1.4) * 0.05;
+        break;
       case 'happy':
       case 'patted': // happy because you clicked or petted it: blushes and glows too
         p.bob = -Math.abs(Math.sin(T * 7)) * 12;
