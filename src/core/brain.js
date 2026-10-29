@@ -65,9 +65,22 @@ class Brain {
 
   get margin() { return (this.win.width - this.hit.width) / 2; }
   get floorY() { return this.area.y + this.area.height - this.win.height; }
-  get ceilingY() { return this.area.y - (this.win.height - this.hit.height); }
-  get leftX() { return this.area.x - this.margin; }
-  get rightX() { return this.area.x + this.area.width - this.win.width + this.margin; }
+  // Bounds keep what is actually drawn on screen. The renderer reports how far the
+  // current drawing reaches (setExtent); until it does, the hitbox stands in.
+  get ceilingY() { return this.area.y - (this.ext ? this.ext.top : this.win.height - this.hit.height); }
+  get leftX() { return this.area.x - (this.ext ? this.ext.left : this.margin); }
+  get rightX() { return this.area.x + this.area.width - this.win.width + (this.ext ? this.ext.right : this.margin); }
+  // Wall drawings are aligned to the hitbox's edge, so on a wall that edge meets the screen's.
+  get wallLeftX() { return this.area.x - this.margin; }
+  get wallRightX() { return this.area.x + this.area.width - this.win.width + this.margin; }
+
+  // { left, right, top }: px from the window's left, right and top edges to the
+  // drawing's outermost visible pixels.
+  setExtent(e) {
+    const ok = (v, max) => Number.isFinite(v) && v >= 0 && v <= max;
+    if (!e || !ok(e.left, this.win.width) || !ok(e.right, this.win.width) || !ok(e.top, this.win.height)) return;
+    this.ext = { left: e.left, right: e.right, top: e.top };
+  }
 
   center() {
     return { x: this.pos.x + this.win.width / 2, y: this.pos.y + this.win.height - this.hit.height / 2 };
@@ -166,7 +179,7 @@ class Brain {
       const next = this.react(dt) || STATES[this.state].update(this, dt);
       if (next) this.enter(next);
     }
-    this.keepInBounds();
+    this.keepInBounds(dt);
     return this.snapshot();
   }
 
@@ -300,14 +313,19 @@ class Brain {
     }
   }
 
-  keepInBounds() {
+  keepInBounds(dt = 0) {
     if (this.state === 'dragged') return;
     const surface = STATES[this.state].surface;
-    this.pos.x = clamp(this.pos.x, this.leftX, this.rightX);
-    this.pos.y = clamp(this.pos.y, this.ceilingY, this.floorY);
+    // A wider drawing appearing at an edge (lying down, a gallop) eases back on
+    // screen rather than jumping; never further out than the hitbox allows.
+    const step = 900 * dt;
+    const ease = (v, lo, hi) => (v < lo ? Math.min(lo, v + step) : v > hi ? Math.max(hi, v - step) : v);
+    if (surface === 'wall') this.pos.x = clamp(this.pos.x, this.wallLeftX, this.wallRightX);
+    else this.pos.x = clamp(ease(this.pos.x, this.leftX, this.rightX), Math.min(this.leftX, this.wallLeftX), Math.max(this.rightX, this.wallRightX));
+    this.pos.y = Math.min(this.floorY, Math.max(ease(this.pos.y, this.ceilingY, Infinity), this.area.y - this.win.height));
     // The ground or wall can vanish: taskbar moved, resolution changed, display unplugged.
     if (surface === 'floor' && this.pos.y < this.floorY - 1) this.enter('fall');
-    else if (surface === 'wall' && this.pos.x > this.leftX + 1 && this.pos.x < this.rightX - 1) this.enter('fall');
+    else if (surface === 'wall' && this.pos.x > this.wallLeftX + 1 && this.pos.x < this.wallRightX - 1) this.enter('fall');
   }
 }
 

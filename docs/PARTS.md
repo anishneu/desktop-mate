@@ -98,7 +98,7 @@ npm run snapshot -- --state=yawn
 
 Try `sit`, `sleep`, `walk`, `happy` and `startled` too. Add `--delay=300` to catch short states like `land`. Wall and air states fall back to the floor when forced there, so check their art with `--anim=climb` instead, which shows an animation whatever the state. If something is wrong with the files, the app falls back to the built-in chibi and prints why in the terminal, for example `parts.json: "armLeft" needs pivots.shoulderLeft`.
 
-If your character is much wider or taller than the template on screen, also adjust `hitbox` in `character.json`. The behavior engine uses it to find the screen edges and the head.
+If your character is much wider or taller than the template on screen, also adjust `hitbox` in `character.json`. The behavior engine uses it for the head and for where wall poses meet the screen edge. Everything else is kept on screen from the drawing's own size, which the parts avatar reports as it changes.
 
 To regenerate the template folder from the built-in chibi:
 

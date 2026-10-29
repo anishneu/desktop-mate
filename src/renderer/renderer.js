@@ -43,8 +43,27 @@
       avatar.setAnim(anim);
     }
     avatar.update(app.ticker.deltaMS / 1000, DM.pose(anim, T - animStart, T, snap), snap);
+    reportExtent();
     updateInteractive();
   });
+
+  // The brain keeps the whole drawing on screen, so tell it how far this one reaches
+  // (with a little room for flicker and sway). Only sent when it changes.
+  let lastExtent = null;
+  function reportExtent() {
+    if (!avatar.extent) return;
+    const e = avatar.extent();
+    const pad = 4;
+    const ext = {
+      left: Math.round(Math.max(0, e.left - pad)),
+      right: Math.round(Math.max(0, W - e.right - pad)),
+      top: Math.round(Math.max(0, e.top - pad)),
+    };
+    const moved = (k) => Math.abs(ext[k] - lastExtent[k]) >= 2;
+    if (lastExtent && !moved('left') && !moved('right') && !moved('top')) return; // ignore breathing
+    lastExtent = ext;
+    api.setExtent(ext);
+  }
 
   // --- click-through ------------------------------------------------------------
   // The window ignores the mouse except over the character or the bubble. The check

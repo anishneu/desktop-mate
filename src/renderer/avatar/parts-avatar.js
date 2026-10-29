@@ -18,6 +18,8 @@
   const QUADRUPED_SWING = 0.6; // four legs swing less than two
   const TURN_STEP = 0.13; // seconds each drawing of a turn shows
   const TURN_FADE_TIME = 0.07; // dissolve between the drawings of a turn
+  // Turning happens on the floor: never on a wall, in the air or being held.
+  const NO_TURN = new Set(['climb', 'cling', 'descend', 'pounce', 'fall', 'dragged', 'land']);
   const FADE_TIME = 0.12; // seconds one drawing dissolves into the next
   const CYCLE_FADE_TIME = 0.04; // between the frames of a looping cycle (a gallop)
   // Limb swing for pose drawings (the main drawing follows pose.js instead):
@@ -145,6 +147,9 @@
       facesLeft: !!spec.facesLeft,
       headTop: (top - feet[1]) * s,
       halfWidth: Math.max(...all.map((i) => Math.max(feet[0] - i.x, i.x + i.w - feet[0]))) * s * 0.8,
+      // How far the drawing reaches left and right of the feet (unmirrored), for the screen bounds.
+      minX: Math.min(...all.map((i) => i.x - feet[0])) * s,
+      maxX: Math.max(...all.map((i) => i.x + i.w - feet[0])) * s,
       sitDrop: hip && !spec.quadruped ? (feet[1] - hip[1]) * s * 0.9 : 0,
       headY: (neck[1] - feet[1]) * s - 40,
       faceMode: face.mode,
@@ -345,7 +350,7 @@
       this.T += dt;
       const turn = this.turn;
       const facingNow = s.facing || 1;
-      if (turn && this.prevAnim) {
+      if (turn && this.prevAnim && !NO_TURN.has(s.anim) && !NO_TURN.has(this.prevAnim)) {
         const was = turn.anims.has(this.prevAnim);
         const is = turn.anims.has(s.anim);
         const old = this.prevFacing;
@@ -506,6 +511,18 @@
     }
 
     // x, y in window coordinates
+    // In window px: the leftmost and rightmost x and the top y of what is drawn now,
+    // including a drawing still dissolving away.
+    extent() {
+      const f = Math.sign(this.root.scale.x) || 1;
+      const sx = Math.abs(this.body.scale.x);
+      const rigs = [this.rig, this.fading].filter(Boolean);
+      const lo = Math.min(...rigs.map((r) => (f > 0 ? r.minX : -r.maxX))) * sx;
+      const hi = Math.max(...rigs.map((r) => (f > 0 ? r.maxX : -r.minX))) * sx;
+      const top = Math.min(...rigs.map((r) => r.headTop));
+      return { left: this.view.x + lo, right: this.view.x + hi, top: this.view.y + this.body.y + top };
+    }
+
     hitTest(x, y) {
       const dx = x - this.view.x;
       const dy = y - (this.view.y + this.body.y);

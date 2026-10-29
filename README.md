@@ -111,6 +111,7 @@ Every drawing also gets procedural motion so it never looks frozen:
 | File serving | A privileged `app://` protocol serves the project root (with a path-traversal guard), so Live2D's loaders work with web security on | Implemented |
 | Behavior engine | Pure JS state machine: 29 states, each with `anim`, `surface` (floor / wall / air), `interruptible`, `enter` and `update` | Implemented |
 | Physics | Gravity, air drag, wall bounce, throws from the mouse's speed, falling when a floor or wall disappears (taskbar moved, display unplugged) | Implemented |
+| Screen bounds | The renderer reports how far the current drawing reaches (`mate:extent`), and the brain keeps all of it on screen: wide poses ease in from an edge, climbing stops below the top of the screen, and wall poses stay flush with the edge | Implemented |
 | Needs | Energy drains while awake and refills while asleep, which biases the next choice toward yawning and sleeping | Implemented |
 | Cursor reactions | Startle on a fast swipe, petting on the head, curiosity and approach to a resting cursor, waking on a jiggle, a click versus a flurry of clicks, swinging it round on a drag (dizzy) | Implemented |
 | Procedural poses | `pose.js` produces bob, squash, lean, sit, head tilt, limb angles, eyes, mood, mouth and emote for every animation name; all avatars read it | Implemented |
@@ -136,8 +137,8 @@ Counted directly from the codebase, not estimated:
 | PNG layers in the fire cat | 78 |
 | Cursor reactions | 4, plus click, click flurry, drag/throw and spin |
 | Task tools | 6 (`help`, `set_timer`, `get_time`, `open_url`, `web_search`, `behave`) |
-| IPC channels | 10 |
-| Automated tests | 22, across 2 files |
+| IPC channels | 11 |
+| Automated tests | 23, across 2 files |
 | CI workflows | 2 (CI, release) |
 | Build targets | 2 (NSIS installer, portable exe) |
 
@@ -268,7 +269,7 @@ Type these into the command box (double-click the cat or press **Ctrl+Alt+M**):
 
 - **Few in-between frames:** pose drawings dissolve into each other in about a tenth of a second rather than morphing. Only the turn and a few sequences (waking up, dizzy, landing, the gallop) have in-between drawings. Each pose is one drawing whose limbs, tail and body move; nothing changes shape the way a frame-by-frame animation would.
 - **Mostly fixed faces:** the front-facing drawing blinks and changes expression, and the walk blinks. The other drawings keep the face they were drawn with, apart from the yawn's open-mouth frame and the dizzy drawings' spinning eyes.
-- **Hand-matched sizes:** AI-generated poses vary a little in proportions. Each pose's on-screen size was matched by eye, and the hitbox the brain uses for edges and the head is one fixed size, so a wide pose like walking can poke slightly past a screen edge.
+- **Different proportions:** the AI-generated poses don't share exact proportions (the gallop and wall poses have a longer body and a smaller head). Each pose is scaled so its head roughly matches the idle drawing's, but the gallop is capped by the 300 px window, so its head stays a little small.
 - **Screen edges only:** the cat walks the taskbar and climbs the screen edges, not the tops of other windows. That needs Win32 window enumeration and is on the [roadmap](docs/ARCHITECTURE.md).
 - **No language model yet:** commands are matched by regular expressions, so phrasing outside those patterns isn't understood. The tool registry is already shaped for LLM function calling, but no model is wired in.
 - **Live2D needs your own files:** the Live2D path hasn't been tested with a real model in this repository. The Cubism core and sample models can't be redistributed, so they have to be downloaded separately.
