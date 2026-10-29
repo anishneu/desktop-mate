@@ -32,7 +32,7 @@ const STATES = {
     anim: 'idle', surface: 'floor', interruptible: true,
     enter(b) { b.data.until = b.rand(2, 6); },
     update(b) {
-      if (b.cursorDistance() < 400) b.faceCursor();
+      // It stays the way it is facing, whatever the cursor does; only its eyes follow.
       if (b.stateTime > b.data.until) return b.chooseNext();
     },
   },
@@ -215,6 +215,15 @@ const STATES = {
     },
   },
 
+  // The cursor resting on it: holds still, smiles and slowly curls its tail.
+  purr: {
+    anim: 'purr', surface: 'floor', interruptible: true,
+    update(b) {
+      b.data.away = b.hovered() ? 0 : (b.data.away || 0) + b.dt;
+      if (b.data.away > 0.6) return 'idle';
+    },
+  },
+
   happy: {
     anim: 'happy', surface: 'floor', interruptible: false,
     update(b) {
@@ -234,8 +243,7 @@ const STATES = {
   mad: {
     anim: 'mad', surface: 'floor', interruptible: false,
     enter(b) {
-      b.faceCursor();
-      b.meow();
+      b.meow(); // no turning to the cursor: each click would flip it round
       b.madUntil = Math.max(b.madUntil, b.time + 1); // when forced rather than clicked
     },
     update(b) {
@@ -303,6 +311,21 @@ const STATES = {
     enter(b) { b.facing = b.thrown || b.facing; }, // still heading the way it was thrown
     update(b) {
       if (b.stateTime > 3) return 'shakeOff';
+    },
+  },
+
+  // Dizzy where it sits, from the cursor circling its head; then it comes round.
+  headDizzy: {
+    anim: 'headDizzy', surface: 'floor', interruptible: false,
+    update(b) {
+      if (b.stateTime > 3) return 'headRecover';
+    },
+  },
+
+  headRecover: {
+    anim: 'headRecover', surface: 'floor', interruptible: false,
+    update(b) {
+      if (b.stateTime > 1.4) return 'idle';
     },
   },
 

@@ -13,8 +13,29 @@
   // Tail sway [speed rad/s, amplitude rad] by animation; otherwise mood "happy" wags.
   const TAIL = {
     walk: [5, 0.14], run: [9, 0.2], sleep: [0.8, 0.04], sit: [1.2, 0.06], yawn: [1, 0.05],
-    fall: [7, 0.3], dragged: [12, 0.22], startled: [14, 0.25], climb: [4, 0.12], descend: [4, 0.12], pounce: [9, 0.2], touchdown: [4, 0.1], cling: [2, 0.1], greet: [3, 0.07], wake: [2.5, 0.12], mad: [13, 0.3],
+    fall: [7, 0.3], dragged: [12, 0.22], startled: [14, 0.25], climb: [4, 0.12], descend: [4, 0.12], pounce: [9, 0.2], touchdown: [4, 0.1], cling: [2, 0.1], greet: [3, 0.07], wake: [2.5, 0.12], mad: [13, 0.3], purr: [2.6, 0.12], idle: [1.8, 0.07],
   };
+  // A segmented tail is posed as a wave that runs from the root to the tip, as a
+  // cat's swish does: at any moment the root half curves one way and the tip half
+  // the other (an S), and as the wave travels the S rolls along and the tip flicks.
+  // The drawing's own curl is cancelled first, so a hooked tail can still make an S.
+  // [speed rad/s, bend per bone in rad at the tip (half that at the root)]; other
+  // animations use their TAIL speed, so a happy tail swishes fast and a cross one lashes.
+  // How many tail shapes per second the tail glides through (tailPoses), by animation;
+  // others go at a third of their TAIL speed, so a happy tail swishes fast and a cross one lashes.
+  // How fast (rad/s) the tail swings over the back from side to side (tailSweep); a
+  // full there-and-back is 2π. Others go at 0.8 × their TAIL speed (a cross cat lashes).
+  const TAIL_SWEEP = { idle: [2.4], sit: [2], purr: [3], talk: [2.4], happy: [4.8], patted: [4.8] };
+  const TAIL_DRAG = 0.011; // how far each bone trails the swing, per rad/s of swing
+  // How much faster than its tuned speed the smooth tail swishes, by animation;
+  // others go by their TAIL speed.
+  const TAIL_ROPE_PACE = { idle: 1, sit: 0.85, purr: 1.2, talk: 1, happy: 1.9, patted: 1.9, mad: 3 };
+  const TAIL_POSE_RATE = { idle: [1.3], sit: [1.1], purr: [1.6], talk: [1.3] };
+  const TAIL_WAVE = { idle: [2.4, 0.15], sit: [2, 0.14], purr: [3.4, 0.21], talk: [2.6, 0.15] };
+  const TAIL_WAVE_BEND = 0.14;
+  const TAIL_KEEP = 0.3; // how much of the shaft's drawn curl stays
+  const TAIL_TIP = 0.8; // past this far along, the bones keep their drawn curl (the tip is a curled tuft)
+  const TAIL_WAVES = 1; // wavelengths along the tail: one makes a single S
   const QUADRUPED_SWING = 0.6; // four legs swing less than two
   const TURN_STEP = 0.13; // seconds each drawing of a turn shows
   const TURN_FADE_TIME = 0.07; // dissolve between the drawings of a turn
@@ -55,6 +76,8 @@
       const k = Math.max(0, 1 - at / 0.7);
       return { x: sin(T * 42) * 2 * k, rot: sin(T * 42) * 0.05 * k };
     },
+    headDizzy: (T) => ({ rot: Math.cos(T * 4) * 0.035, x: sin(T * 4) * 2 }), // a slow circling wobble
+    headRecover: (T, p, vx, at) => ({ rot: sin(at * 4) * 0.03 * Math.max(0, 1 - at / 1.4) }),
     recover: (T, p, vx, at) => ({ rot: sin(at * 4) * 0.04 * Math.max(0, 1 - at / 1.2) }),
   };
 
@@ -124,9 +147,18 @@
     const load = (entries) => Promise.all(entries.map(async ([k, f]) => [k, await loadTrimmed(file(f))]));
     const variants = (group) => Object.entries((face.mode === 'sprites' && face[group]) || {});
     const spins = spec.spin || [];
-    const [img, eyes, mouth, spinImg] = (await Promise.all([
+    const tailSegs = spec.tailSegments || [];
+    // `tailRope`: the tail as one smooth bendable strip (see tail-rope.js). Loaded
+    // whole: trimming would shift it off its pin.
+    let ropeImage = null;
+    if (spec.tailRope) {
+      ropeImage = new Image();
+      ropeImage.src = file(spec.tailRope.texture);
+      await ropeImage.decode().catch(() => fail(`could not load ${spec.tailRope.texture}`));
+    }
+    const [img, eyes, mouth, spinImg, segImg] = (await Promise.all([
       load(Object.entries(parts)), load(variants('eyes')), load(variants('mouth')),
-      load(spins.map((p) => [p.part, p.part])),
+      load(spins.map((p) => [p.part, p.part])), load(tailSegs.map((p) => [p.part, p.part])),
     ])).map(Object.fromEntries);
     if (!Object.keys(img).length) fail('lists no parts');
 
@@ -170,7 +202,57 @@
       return c;
     };
 
-    rig.tail = joint(pivots.tail || feet, feet, img.tail);
+    // `tailSegments`: the tail as a chain that can curl. Each segment turns about
+    // its joint and carries the next, drawn over it so its round cap hides the seam.
+    rig.tail = joint(pivots.tail || feet, feet, tailSegs.length || ropeImage ? null : img.tail);
+    if (ropeImage) {
+      rig.tailRope = new DM.TailRope(spec.tailRope, ropeImage, s);
+      rig.tail.addChild(rig.tailRope.view);
+      rig.tailMotion = { ...DM.TAIL_DEFAULTS, ...(spec.tailMotion || {}) };
+    }
+    // `tailPoses`: shapes for the segmented tail to glide between (see the update).
+    rig.tailPoses = tailSegs.length && spec.tailPoses?.length > 1 ? spec.tailPoses : null;
+    // `tailSweep`: the tail (pinned at pivots.tail, behind the middle of the body)
+    // swings 180° over the back from one side to the other.
+    rig.tailSweep = !!spec.tailSweep;
+    if (rig.tailSweep || rig.tailRope) rig.minX = Math.min(rig.minX, -rig.maxX); // it reaches the other side too
+    rig.tailSegs = [];
+    let parent = rig.tail;
+    tailSegs.forEach((seg, i) => {
+      const c = new PIXI.Container();
+      c.position.set(...at(seg.at, i ? tailSegs[i - 1].at : pivots.tail || feet)); // the first hangs off the pin
+      c.plain = c.addChild(sprite(segImg[seg.part], seg.at));
+      parent.addChild(c); // over its parent: its round cap covers the joint
+      rig.tailSegs.push(c);
+      parent = c;
+    });
+    // The angle the drawing already bends through at each joint (0 at the root), so
+    // the wave can replace the drawn curl rather than add to it.
+    const dir = (i) => Math.atan2(tailSegs[i + 1].at[1] - tailSegs[i].at[1], tailSegs[i + 1].at[0] - tailSegs[i].at[0]);
+    const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
+    rig.tailDrawn = tailSegs.map((_, i) => (i === 0 ? 0 : i < tailSegs.length - 1 ? wrap(dir(i) - dir(i - 1)) : null));
+    // Each bone also gets its picture mirrored about its own length (joint to next
+    // joint), shown while that part of the tail curls the other way (tailSweep).
+    rig.tailSegs.forEach((c, i) => {
+      if (tailSegs.length < 2) return;
+      const a = dir(Math.min(i, tailSegs.length - 2));
+      const m = c.addChild(new PIXI.Container());
+      m.rotation = a;
+      m.scale.y = -1;
+      const inner = m.addChild(new PIXI.Container());
+      inner.rotation = -a;
+      inner.addChild(sprite(segImg[tailSegs[i].part], tailSegs[i].at));
+      c.mirrored = m;
+      m.visible = false;
+      c.setChildIndex(m, c.getChildIndex(c.plain) + 1);
+    });
+    if (tailSegs.length > 1) {
+      // From the pin to the root, and the root bone's angle off that line.
+      const pin = pivots.tail || feet;
+      rig.tailRootLine = Math.atan2(tailSegs[0].at[1] - pin[1], tailSegs[0].at[0] - pin[0]);
+      rig.tailDrawn[0] = wrap(dir(0) - rig.tailRootLine);
+    }
+    if (tailSegs.length > 2) rig.tailDrawn[tailSegs.length - 1] = rig.tailDrawn[tailSegs.length - 2]; // the tip carries on curling
     rig.hairBack = joint(neck, feet, img.hairBack);
     rig.legL = joint(pivots.hipLeft || feet, feet, img.legLeft);
     rig.legR = joint(pivots.hipRight || feet, feet, img.legRight);
@@ -183,6 +265,8 @@
     const limbs = rig.quadruped || isPose
       ? [rig.armL, rig.armR, rig.legL, rig.legR, torso]
       : [rig.legL, rig.legR, torso, rig.armL, rig.armR];
+    // A swishing tail (tailPoses) sits in a holder at the feet, mirrored about the
+    // cat's middle to sweep behind the body from one side to the other.
     rig.view.addChild(rig.tail, rig.hairBack, ...limbs, rig.head);
     // `open`: the same drawing with the mouth open, swapped in while the
     // animation's mouth is open (yawning, talking).
@@ -306,6 +390,9 @@
       this.blink = DM.face.blinker();
       this.faceKey = '';
       this.tailPhase = 0;
+      this.tailWave = 0;
+      this.tailClock = 0;
+      this.tailSidePhase = 0;
       this.vx = 0;
       this.lastX = null;
       this.T = 0;
@@ -441,6 +528,82 @@
       const [speed, amp] = TAIL[s.anim] || (p.mood === 'happy' ? [10, 0.22] : [1.6, 0.08]);
       this.tailPhase += speed * dt;
       rig.tail.rotation = Math.sin(this.tailPhase) * amp - p.lean * 0.5;
+      const n = rig.tailSegs.length;
+      if (rig.tailRope) {
+        // The smooth tail swishes on its own, faster when happy and lashing when cross.
+        const m = rig.tailMotion;
+        const k = TAIL_ROPE_PACE[s.anim] ?? Math.max(0.6, speed / 2.6);
+        rig.tailRope.update(dt, k === 1 ? m : { ...m, speed: m.speed * k });
+        rig.tail.rotation = -p.lean * 0.5;
+      } else if (rig.tailSweep && n) {
+        // A cat's swish. The base swings 180° over the back from one side to the other,
+        // easing out at each end. The curl follows the base: drawn (+1) out on its own
+        // side, straight as it passes upright, mirrored (−1) out on the other side, so
+        // it always curls outward and never dips below the floor. Each bone takes the
+        // curl and the drag a moment after the one before, so the change runs from the
+        // root to the tip: the tail bends into an S as it swings and the tip whips over
+        // last at each end (the flip).
+        const [rate] = TAIL_SWEEP[s.anim] || [speed * 0.8];
+        const ts = this.tailSweepState ||= { phase: 0, curl: new Array(n).fill(1), drag: new Array(n).fill(0) };
+        ts.phase += rate * dt;
+        const cosP = Math.cos(ts.phase);
+        const theta = (Math.PI / 2) * (1 - cosP);
+        const thetaVel = (Math.PI / 2) * rate * Math.sin(ts.phase);
+        const kRoot = Math.min(1, dt * 12);
+        const kChain = Math.min(1, dt * 32);
+        ts.curl[0] += (Math.cos(theta) - ts.curl[0]) * kRoot;
+        ts.drag[0] += (-thetaVel * TAIL_DRAG - ts.drag[0]) * kRoot;
+        for (let i = 1; i < n; i++) {
+          ts.curl[i] += (ts.curl[i - 1] - ts.curl[i]) * kChain;
+          ts.drag[i] += (ts.drag[i - 1] - ts.drag[i]) * kChain;
+        }
+        const mirror = (1 - ts.curl[0]) / 2; // 0 … 1 as the base curl flips
+        rig.tail.rotation = -theta - 2 * rig.tailRootLine * mirror - p.lean * 0.5;
+        rig.tail.scale.y = 1;
+        rig.tailSegs.forEach((seg, i) => {
+          const D = rig.tailDrawn[i];
+          const t = i / (n - 1);
+          const ripple = 0.035 * Math.sin(this.T * 5.5 - i * 0.55) * t;
+          seg.rotation = (ts.curl[i] - 1) * D + ts.drag[i] * (0.4 + t) + ripple;
+          // Curling the other way: show the bone's mirrored picture, so its own
+          // curve faces the right way. A quick crossfade around straight.
+          const f = Math.min(1, Math.max(0, (0.12 - ts.curl[i]) / 0.24));
+          seg.plain.alpha = 1 - f;
+          seg.mirrored.visible = f > 0;
+          seg.mirrored.alpha = f;
+        });
+      } else if (rig.tailPoses) {
+        // The tail swishes on its own: it flows through the drawn shapes, low to high
+        // and back, along a smooth curve at a steady pace (no stopping at each shape),
+        // so the S keeps rolling. The shapes carry the S and the tip's flick.
+        const P = rig.tailPoses;
+        const seq = [...P.keys(), ...[...P.keys()].slice(1, -1).reverse()];
+        const [rate] = TAIL_POSE_RATE[s.anim] || [speed * 0.35];
+        this.tailClock = (this.tailClock + rate * dt) % seq.length;
+        const k = Math.floor(this.tailClock);
+        const u = this.tailClock - k;
+        const pose = (j) => P[seq[(j + seq.length) % seq.length]];
+        const [p0, p1, p2, p3] = [pose(k - 1), pose(k), pose(k + 1), pose(k + 2)];
+        // Catmull-Rom: passes through every shape with no corners in between.
+        const at = (i) => 0.5 * (2 * p1[i] + (p2[i] - p0[i]) * u
+          + (2 * p0[i] - 5 * p1[i] + 4 * p2[i] - p3[i]) * u * u
+          + (3 * p1[i] - p0[i] - 3 * p2[i] + p3[i]) * u * u * u);
+        rig.tail.rotation = at(0) - p.lean * 0.5;
+        rig.tailSegs.forEach((seg, i) => {
+          if (i) seg.rotation = at(i);
+        });
+      } else if (n) {
+        const [wSpeed, wBend] = TAIL_WAVE[s.anim] || [speed, TAIL_WAVE_BEND];
+        this.tailWave += wSpeed * dt;
+        const bendA = wBend;
+        rig.tailSegs.forEach((seg, i) => {
+          if (!i) return;
+          const t = i / (n - 1);
+          const tip = t > TAIL_TIP;
+          const wave = bendA * (tip ? 0.25 : 0.6 + 0.6 * t) * Math.sin(this.tailWave - TAIL_WAVES * 2 * Math.PI * t);
+          seg.rotation = (tip ? 1 : TAIL_KEEP) * rig.tailDrawn[i] + wave - rig.tailDrawn[i];
+        });
+      }
       if (rig.openFrame) {
         // A quick (~0.1 s) dissolve between the two frames as the mouth opens and closes.
         const t = Math.min(1, Math.max(0, (p.mouth - 0.15) / 0.2));

@@ -81,8 +81,8 @@ function createWindow() {
 
 function tick(dt) {
   if (win.isDestroyed()) return;
-  const cursor = screen.getCursorScreenPoint();
   const c = brain.center();
+  const cursor = screen.getCursorScreenPoint();
   const area = screen.getDisplayNearestPoint({ x: Math.round(c.x), y: Math.round(c.y) }).workArea;
   const s = brain.update(dt, { area, cursor });
   const key = `${s.x},${s.y}`;
@@ -157,7 +157,8 @@ ipcMain.on('mate:export-file', (_e, name, data) => {
 });
 ipcMain.on('mate:export-done', () => app.quit());
 
-// Dev helper: `npm run snapshot` grabs the window after a few seconds and exits.
+// Dev helper: `npm run snapshot` grabs the window a few seconds after the cat has
+// loaded (when the brain starts) and exits.
 // Add `-- --state=sleep` to force a state once the companion has landed, and
 // `--delay=300` (ms after forcing) to catch short states like land or startled.
 // `--anim=cling` shows an animation's art without the state (e.g. on the floor).
@@ -190,15 +191,45 @@ function captureSnapshot(file) {
   }, 3000 + Number(arg('delay') || 2000));
 }
 
-if (!app.requestSingleInstanceLock()) {
-  app.quit();
-} else {
+function launch() {
   app.whenReady().then(() => {
     registerAppProtocol();
     createWindow();
-    startLoop();
+    // Hold the brain until the drawings are loaded, so the drop-in is seen from the
+    // top; start anyway if the renderer never says so.
+    let started = false;
+    const start = () => {
+      if (started) return;
+      started = true;
+      startLoop();
+      if (snapshotArg) captureSnapshot(snapshotArg.slice('--snapshot='.length));
+    };
+    ipcMain.once('mate:ready', start);
+    setTimeout(start, 15000);
     globalShortcut.register(PROMPT_SHORTCUT, openPrompt);
-    if (snapshotArg) captureSnapshot(snapshotArg.slice('--snapshot='.length));
   });
   app.on('will-quit', () => globalShortcut.unregisterAll());
+}
+
+// One companion at a time. Launching it again replaces the running one, so a fresh
+// `npm start` always shows the current code: the running copy quits when it hears
+// another has started, and the new one waits for its turn. (Dev snapshot and export
+// runs don't take over; they just exit.)
+app.on('second-instance', () => app.quit());
+if (app.requestSingleInstanceLock()) {
+  launch();
+} else if (snapshotArg || exportDir) {
+  app.quit();
+} else {
+  let launched = false;
+  const retry = setInterval(() => {
+    if (!app.requestSingleInstanceLock()) return;
+    clearInterval(retry);
+    launched = true;
+    launch();
+  }, 250);
+  setTimeout(() => {
+    clearInterval(retry);
+    if (!launched) app.quit();
+  }, 5000);
 }
