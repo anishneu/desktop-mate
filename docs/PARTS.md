@@ -31,6 +31,8 @@ Use any free image generator. Ask for one image in a pose that's easy to cut:
 | `tail.png` | optional | A tail, drawn behind the body. Sways on its own, faster when walking, wags when happy. Needs `pivots.tail` (the tail's base). |
 | `flame.png` | optional | Fire, sparkles or an antenna on the head that flickers. Leave the same art in `head.png` too: the flame only ever grows, so the copy underneath stays covered. Needs `pivots.flame` (its base). |
 | `open.png` | optional, for poses | The same drawing with the mouth open (generate it as an edit of the closed one so nothing else moves). It replaces the drawing while the animation's mouth is open, e.g. yawning. |
+| `spin` (a list, not a part) | optional, for poses | Discs that turn in place, such as spiral eyes: `{"part": "eye.png", "at": [x, y], "squash": [sx, sy], "speed": 5}`. Draw the disc round, centered on `at`. `squash` makes it oval again on screen, so it turns inside an oval eye. `speed` is in radians per second. |
+| `blink.png` | optional, for poses | Closed eyes painted over a drawing whose eyes are part of the body (e.g. a side-on walk). It shows while the cat blinks. |
 | `eyes_open.png`, `eyes_closed.png`, `eyes_happy.png` (`eyes_surprised.png` optional) | for sprite faces | Both eyes, cut from the variant images |
 | `mouth_closed.png`, `mouth_open.png`, `mouth_wide.png`, `mouth_smile.png` | for sprite faces | The mouth, cut from the variant images |
 
@@ -77,6 +79,8 @@ Copy `assets/parts/template/` to `assets/parts/<your-name>/`, replace the PNGs, 
 | `"drawn"` | The face art is blank | The app draws animated anime eyes and a mouth. Set `face.drawn.eyeLeft`, `eyeRight` and `mouth` (centers in canvas px), plus `eyeWidth` (px) and optionally `iris`/`line` colors as `"#rrggbb"`. |
 | `"none"` | The face is baked into `head.png` | No blinking or expressions, only the body animates. |
 
+Optional, with any mode: `face.blush` lists the two cheek centers (`[[x, y], [x, y]]`, with `blushSize` as the radius in px) for pink cheeks when happy, and `face.brows` lists one line per eye (`[outerX, outerY, innerX, innerY]`) for angry brows. A brow covers the top of the eye with `face.fur` and draws its edge in `face.lid` (both `"#rrggbb"`).
+
 ## 5. Switch the app to your character
 
 In `assets/character.json`:
@@ -118,7 +122,7 @@ One front-facing image can't walk convincingly or curl up to sleep. Generate mor
 - **`anims`**: the animations that show this drawing instead of the main one: `idle`, `walk`, `run`, `sit`, `yawn`, `sleep`, `climb`, `cling`, `descend` (climbing down a wall head first), `fall`, `land`, `dragged`, `startled`, `happy`, `greet` (the wave hello after launch), `wake` (the stretch after sleeping) or `talk`. Going to sleep always plays `yawn` first.
 - **Limbs in a pose** (`armLeft`, `armRight`, `legLeft`, `legRight`, `tail`, each with its pivot) swing on their own in `climb`, `cling` and `greet`, and every pose drawing gets some whole-body motion (bounce, sway, breathing, a dangling swing) so a single image doesn't look frozen.
 - **`from`, `to`, `loop`** (seconds): several poses can share one animation. `from`/`to` say when in the animation each one shows (e.g. a brace for the first 0.12 s of `land`, then the splat), and `loop` repeats that timing, which turns two drawings into a cycle (a gallop with `"loop": 0.36`, one drawing `"to": 0.18`, the other `"from": 0.18`).
-- **`transition`** (instead of `anims`): a pose such as a three-quarter turn that flashes for a moment whenever the companion starts or stops one of the listed animations, e.g. `"transition": ["walk", "run"]`.
+- **`transition`** (instead of `anims`): a pose such as a three-quarter turn that plays for a moment whenever the companion starts or stops one of the listed animations, e.g. `"transition": ["walk", "run"]`. Several transition poses play in order of their `step` (0 = nearest the front view), forwards when turning to the side and backwards when turning to face you. Turning round while side-on goes back towards the front and out the other way. Draw them as edits of one image so the body stays the same size and in the same place.
 - **Wall poses** (`climb`, `cling`, `descend`) are drawn with the wall on the right. Put `feet[0]` 75 screen px (half the hitbox width) left of where the wall is in the image, so the paws touch the screen edge. The app mirrors the drawing for the left wall.
 - **`height`**: pick it so the character looks the same size as the main drawing, not necessarily the same height (a sleeping cat is shorter).
 - **`still`**: keep the drawing in place, with no bob, squash or lean (a curled-up sleeper), apart from slow breathing.

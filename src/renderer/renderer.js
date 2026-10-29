@@ -30,7 +30,10 @@
   let anim = null;
   let animStart = 0;
   const t0 = performance.now();
-  api.onTick((s) => { snap = s; });
+  api.onTick((s) => {
+    if (snap.meows !== undefined && s.meows > snap.meows && s.sound !== false) meow();
+    snap = s;
+  });
 
   app.ticker.add(() => {
     const T = (performance.now() - t0) / 1000;
@@ -157,6 +160,45 @@ async function createAvatar(cfg) {
     console.warn(`[avatar] ${cfg.avatar} avatar unavailable (${err.message || err}); using the placeholder.`);
   }
   return new DM.PlaceholderAvatar();
+}
+
+// A cross "mrr-OW" synthesized with Web Audio: a buzzy source whose pitch rises
+// and falls, through two vowel-like filters that open from "m" to "ow".
+let audio;
+function meow() {
+  audio ||= new AudioContext();
+  const t = audio.currentTime + 0.01;
+  const pitch = 0.9 + Math.random() * 0.2;
+  const len = 0.62;
+  const src = audio.createOscillator();
+  src.type = 'sawtooth';
+  src.frequency.setValueAtTime(420 * pitch, t);
+  src.frequency.linearRampToValueAtTime(760 * pitch, t + len * 0.35);
+  src.frequency.linearRampToValueAtTime(480 * pitch, t + len);
+  const vibrato = audio.createOscillator();
+  const depth = audio.createGain();
+  vibrato.frequency.value = 22;
+  depth.gain.value = 14;
+  vibrato.connect(depth).connect(src.frequency);
+  const out = audio.createGain();
+  out.gain.setValueAtTime(0, t);
+  out.gain.linearRampToValueAtTime(0.16, t + 0.06);
+  out.gain.setValueAtTime(0.16, t + len * 0.6);
+  out.gain.exponentialRampToValueAtTime(0.001, t + len);
+  out.connect(audio.destination);
+  for (const [from, to, q] of [[500, 1300, 6], [1400, 2600, 9]]) {
+    const f = audio.createBiquadFilter();
+    f.type = 'bandpass';
+    f.Q.value = q;
+    f.frequency.setValueAtTime(from, t);
+    f.frequency.linearRampToValueAtTime(to, t + len * 0.4);
+    f.frequency.linearRampToValueAtTime(from * 1.3, t + len);
+    src.connect(f).connect(out);
+  }
+  for (const o of [src, vibrato]) {
+    o.start(t);
+    o.stop(t + len + 0.05);
+  }
 }
 
 function loadScript(src) {

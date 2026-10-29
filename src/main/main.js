@@ -24,6 +24,7 @@ const exportDir = process.argv.find((a) => a.startsWith('--export-template='))?.
 let win;
 let brain;
 let lastPos = '';
+let soundOn = true;
 
 protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { standard: true, secure: true, supportFetchAPI: true } },
@@ -91,7 +92,7 @@ function tick(dt) {
     win.setBounds({ x: s.x, y: s.y, width: W, height: H });
     lastPos = key;
   }
-  win.webContents.send('mate:tick', { ...s, ...(forcedAnim && { anim: forcedAnim }), cursor: { x: cursor.x - s.x, y: cursor.y - s.y } });
+  win.webContents.send('mate:tick', { ...s, ...(forcedAnim && { anim: forcedAnim }), sound: soundOn, cursor: { x: cursor.x - s.x, y: cursor.y - s.y } });
 }
 
 function startLoop() {
@@ -129,6 +130,7 @@ function showMenu() {
     { label: 'Talk to me…', accelerator: PROMPT_SHORTCUT, click: openPrompt },
     { label: 'Do something', submenu: actions.map(([label, state]) => ({ label, click: () => brain.send('force', { state }) })) },
     { label: 'Wander around', type: 'checkbox', checked: brain.autonomous, click: (item) => { brain.autonomous = item.checked; } },
+    { label: 'Sounds', type: 'checkbox', checked: soundOn, click: (item) => { soundOn = item.checked; } },
     { type: 'separator' },
     { label: 'Quit', click: () => app.quit() },
   ]).popup({ window: win });
