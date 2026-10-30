@@ -50,7 +50,8 @@
       this.plain = this.view.addChild(new PIXI.SimpleRope(PIXI.Texture.from(image), this.points));
       this.mirrored = this.view.addChild(new PIXI.SimpleRope(PIXI.Texture.from(flipped(image)), this.points));
       this.mirrored.alpha = 0;
-      this.state = { phase: 0, T: 0, target: 1, curl: new Array(n).fill(1), drag: new Array(n).fill(0), prevTheta: null };
+      // side: which way each point curls (+1 as drawn … −1 mirrored); amt: how much.
+      this.state = { phase: 0, T: 0, target: 1, amt: DEFAULTS.curl, side: new Array(n).fill(1), drag: new Array(n).fill(0), prevTheta: null };
       this.update(0, DEFAULTS);
     }
 
@@ -64,30 +65,35 @@
       const c = Math.max(-1, Math.min(1, k * Math.cos(st.phase))); // +1 own side … −1 far side
       // How far the base is raised from its drawn direction (radians): the swing is
       // centred on straight up (90°), so at 180° it runs from the drawing to its mirror.
-      const elev = ((90 + P.lean) - (P.range / 2) * c) * Math.PI / 180;
+      // Eased toward the swing, so a change of settings (going stiff when cross)
+      // glides instead of jumping.
+      const goal = ((90 + P.lean) - (P.range / 2) * c) * Math.PI / 180;
+      const elev = st.prevTheta === null ? goal : st.prevTheta + (goal - st.prevTheta) * Math.min(1, dt * 14);
       const vel = st.prevTheta === null || dt <= 0 ? 0 : (elev - st.prevTheta) / dt;
       st.prevTheta = elev;
 
-      let target = P.curl;
-      if (P.mode === 'follow') target = P.mirror ? P.curl * c : P.curl;
+      // Which way it curls follows the swing; how much is the curl setting. Kept
+      // apart, so straightening the tail (going stiff) never reads as half-flipped.
+      let target = 1;
+      if (P.mode === 'follow') target = P.mirror ? c : 1;
       else if (P.mode === 'flip') {
         if (c < -0.93) st.target = -1;
         else if (c > 0.93) st.target = 1;
-        target = P.mirror ? P.curl * st.target : P.curl;
+        target = P.mirror ? st.target : 1;
       }
       const per = BONES / (n - 1);
       const kr = Math.min(1, dt * 12);
       const kc = Math.min(1, dt * P.lag / per);
-      st.curl[0] += (target - st.curl[0]) * kr;
+      st.amt += (P.curl - st.amt) * kr;
+      st.side[0] += (target - st.side[0]) * kr;
       st.drag[0] += (-vel * P.drag * per - st.drag[0]) * kr;
       for (let j = 1; j < n; j++) {
-        st.curl[j] += (st.curl[j - 1] - st.curl[j]) * kc;
+        st.side[j] += (st.side[j - 1] - st.side[j]) * kc;
         st.drag[j] += (st.drag[j - 1] - st.drag[j]) * kc;
       }
 
       // How mirrored the tail is: 0 as drawn … 1 fully mirrored.
-      const amt = Math.max(0.001, Math.abs(P.curl));
-      const m = P.mirror && P.mode !== 'none' ? Math.max(0, Math.min(1, (1 - st.curl[0] / amt) / 2)) : 0;
+      const m = Math.max(0, Math.min(1, (1 - st.side[0]) / 2));
       // The base direction: the drawn one, raised by the elevation, and mirrored
       // about straight up as m goes to 1.
       let h = heading - elev - 2 * heading * m;
@@ -96,16 +102,18 @@
       pts[0].set(0, 0);
       for (let j = 1; j < n; j++) {
         const t = j / (n - 1);
-        h += st.curl[j] * turns[j] + st.drag[j] * (0.4 + t) + P.ripple * per * Math.sin(st.T * P.rspeed - j * 0.55 * per) * t;
+        h += st.amt * st.side[j] * turns[j] + st.drag[j] * (0.4 + t) + P.ripple * per * Math.sin(st.T * P.rspeed - j * 0.55 * per) * t;
         const ds = this.spec.points[j] - this.spec.points[j - 1];
         x += Math.cos(h) * ds;
         y += Math.sin(h) * ds;
         pts[j].set(x, y);
       }
+      // The flipped strip fades in over the plain one, which stays solid underneath,
+      // so the tail never turns see-through.
       const f = Math.max(0, Math.min(1, (m - 0.4) / 0.2));
-      this.plain.alpha = 1 - f;
-      this.mirrored.alpha = f;
+      this.plain.alpha = 1;
       this.plain.visible = f < 1;
+      this.mirrored.alpha = f;
       this.mirrored.visible = f > 0;
     }
   }

@@ -2,7 +2,7 @@
   "name": "Mate",
   "avatar": "parts",
   "parts": "/assets/parts/fire-cat/parts.json",
-  "window": { "width": 300, "height": 400 },
+  "window": { "width": 300, "height": 400, "overhang": 24 },
   "hitbox": { "width": 150, "height": 214 },
   "tuning": {},
   "live2d": {
