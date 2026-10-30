@@ -33,7 +33,7 @@ const STATES = {
     enter(b) { b.data.until = b.rand(2, 6); },
     update(b) {
       // It stays the way it is facing, whatever the cursor does; only its eyes follow.
-      if (b.stateTime > b.data.until) return b.chooseNext();
+      if (b.stateTime > b.data.until || (b.resting.size && b.stateTime > 1)) return b.chooseNext();
     },
   },
 
@@ -98,7 +98,15 @@ const STATES = {
     enter(b) { b.data.until = b.rand(1.2, 2.2); },
     update(b, dt) {
       b.pos.y += b.tuning.climbSpeed * 1.4 * dt;
-      if (b.stateTime > b.data.until || b.pos.y >= b.floorY - 40) return 'pounce';
+      if (b.stateTime > b.data.until || b.pos.y >= b.floorY - 40) return 'peek';
+    },
+  },
+
+  // Stops on the way down and looks at the floor, sizing up the jump.
+  peek: {
+    anim: 'peek', surface: 'wall', interruptible: true,
+    update(b) {
+      if (b.stateTime > 1) return 'pounce';
     },
   },
 
@@ -138,11 +146,11 @@ const STATES = {
     },
   },
 
-  // Lying down, drowsy, on the way to sleep.
+  // Lying down, drowsy, then dozing off, on the way to sleep.
   liedown: {
     anim: 'liedown', surface: 'floor', interruptible: false,
     update(b) {
-      if (b.stateTime > 1.4) return 'curlYawn';
+      if (b.stateTime > 1.8) return 'curlYawn';
     },
   },
 
@@ -163,20 +171,22 @@ const STATES = {
   },
 
   // Cursor reactions are handled specially while asleep (see Brain.react).
+  // While resting (a focus session, or you're away) it sleeps until that ends.
   sleep: {
     anim: 'sleep', surface: 'floor', interruptible: false,
     enter(b) { b.data.until = b.rand(b.tuning.sleepMin, b.tuning.sleepMax); },
     update(b) {
+      if (b.resting.size) return;
       if (b.energy >= 0.98 && b.stateTime > b.data.until) return 'wake';
     },
   },
 
-  // Waking up: a long stretch. It won't nap again for a while, even if woken early.
+  // Waking up: drowsy with a couple of blinks, lying up, a yawn and a big stretch. It won't nap again for a while, even if woken early.
   wake: {
     anim: 'wake', surface: 'floor', interruptible: false,
     enter(b) { b.cooldowns.nap = b.tuning.napCooldown; },
     update(b) {
-      if (b.stateTime > 4.4) return 'idle'; // drowsy, get up, stretch, stand, sit up
+      if (b.stateTime > 4.1) return 'idle';
     },
   },
 

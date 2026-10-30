@@ -63,6 +63,8 @@ class Brain {
     this.lastMeow = -Infinity;
     this.dizzy = false; // spun round on the last drag: dizzy when it lands
     this.circle = { turned: 0, idle: 0 }; // the cursor circling its head
+    // Reasons to stay asleep ('focus', 'away'): it goes to bed and only wakes when all clear.
+    this.resting = new Set();
     this.enter('fall'); // drop in from the top of the screen
   }
 
@@ -147,6 +149,7 @@ class Brain {
 
   // Autonomous choice after idling. Low energy makes yawning and sleeping likelier.
   chooseNext() {
+    if (this.resting.size) return this.bedtime();
     if (!this.autonomous) return 'idle';
     const e = this.energy;
     const nearWall = Math.min(this.pos.x - this.leftX, this.rightX - this.pos.x) < 200;
@@ -168,7 +171,8 @@ class Brain {
 
   // --- main loop ------------------------------------------------------------
 
-  // Queue an external event: 'drag-start', 'drag-end', 'say' {duration}, 'force' {state}.
+  // Queue an external event: 'drag-start', 'drag-end', 'say' {duration}, 'force' {state},
+  // 'rest' {reason, on} (focus or away: sleep until every reason is cleared), 'meow'.
   send(type, payload = {}) { this.events.push({ type, ...payload }); }
 
   enter(name) {
@@ -261,6 +265,17 @@ class Brain {
         if (!target || this.state === 'dragged') continue;
         if (target.surface === 'floor' && s.surface !== 'floor') continue;
         this.enter(e.state === 'sleep' && !['liedown', 'curlYawn'].includes(this.state) ? this.bedtime() : e.state);
+      } else if (e.type === 'rest') {
+        if (e.on) this.resting.add(e.reason);
+        else this.resting.delete(e.reason);
+        const asleep = ['liedown', 'curlYawn', 'sleep'].includes(this.state);
+        // Anything busier (on a wall, being carried, cheering) finishes first; idle then sends it to bed.
+        if (this.resting.size && !asleep && s.interruptible && s.surface === 'floor') this.enter(this.bedtime());
+        else if (!this.resting.size && !e.on && asleep) this.enter('wake');
+        else continue;
+      } else if (e.type === 'meow') {
+        this.meow();
+        continue;
       } else {
         continue;
       }
@@ -298,7 +313,8 @@ class Brain {
     const dist = this.cursorDistance();
     this.pet = Math.max(0, this.pet - dt * 0.6);
 
-    if (this.state === 'sleep') return dist < 220 && c.speed > 600 ? 'wake' : undefined;
+    // Asleep for focus or while you're away, only a click wakes it.
+    if (this.state === 'sleep') return !this.resting.size && dist < 220 && c.speed > 600 ? 'wake' : undefined;
     if (!s.interruptible) return;
 
     // Startle: only a fast swipe heading at the cat from close by, not ordinary
@@ -348,8 +364,9 @@ class Brain {
       return 'purr';
     }
 
-    // Curiosity: a cursor resting nearby gets a visit now and then.
-    if (this.state === 'idle' && c.still > 1.5 && dist > 160 && dist < this.tuning.curiosityRadius &&
+    // Curiosity: a cursor resting nearby gets a visit now and then, once it has settled:
+    // leaving the instant it stops would flash through a turn to the front and back.
+    if (this.state === 'idle' && this.stateTime > 1.2 && c.still > 1.5 && dist > 160 && dist < this.tuning.curiosityRadius &&
         c.y > this.center().y - 250 && this.ready('curious', 12) && this.rng() < 0.6) {
       return 'approach';
     }

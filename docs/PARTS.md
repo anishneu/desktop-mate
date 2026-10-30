@@ -68,7 +68,7 @@ Copy `assets/parts/template/` to `assets/parts/<your-name>/`, replace the PNGs, 
 - **Coordinates are canvas pixels** of your full image. In Photopea, open **Window → Info** and hover over a point to read its x, y.
 - **`feet`** is the point between the soles, where the character stands on the taskbar.
 - **`neck`** is where the head turns: the bottom-center of the chin. Shoulders and hips are where each arm and leg would rotate. Look at the template's `GUIDE.png` for examples.
-- **`height`** is the on-screen height in pixels. The app scales the art to fit. Keep it around 200–240 for the default 300×400 window.
+- **`height`** is the on-screen height in pixels. The app scales the art to fit. Keep it around 200–240 for the default 340×400 window.
 - Delete parts and pivots you don't use. Each limb needs only its own pivot.
 - **`facesLeft`:** set this to `true` if the art faces left. Most front-facing art leaves it `false`.
 
@@ -122,9 +122,10 @@ One front-facing image can't walk convincingly or curl up to sleep. Generate mor
 ]
 ```
 
-- **`anims`**: the animations that show this drawing instead of the main one: `idle`, `walk`, `run`, `sit`, `yawn`, `sleep`, `climb`, `cling`, `descend` (climbing down a wall head first), `fall`, `land`, `dragged`, `startled`, `happy`, `greet` (the wave hello after launch), `wake` (the stretch after sleeping) or `talk`. Going to sleep always plays `yawn` first.
+- **`anims`**: the animations that show this drawing instead of the main one: `idle`, `walk`, `run`, `sit`, `yawn`, `sleep`, `climb`, `cling`, `descend` (climbing down a wall head first), `peek` (stopped on the way down, looking at the floor), `fall`, `land`, `dragged`, `startled`, `happy`, `greet` (the wave hello after launch), `liedown` (lying down on the way to sleep), `curlYawn` (the yawn as it curls up), `wake` (getting up and stretching after sleeping) or `talk`.
 - **Limbs in a pose** (`armLeft`, `armRight`, `legLeft`, `legRight`, `tail`, each with its pivot) swing on their own in `climb`, `cling` and `greet`, and every pose drawing gets some whole-body motion (bounce, sway, breathing, a dangling swing) so a single image doesn't look frozen.
 - **`from`, `to`, `loop`** (seconds): several poses can share one animation. `from`/`to` say when in the animation each one shows (e.g. a brace for the first 0.12 s of `land`, then the splat), and `loop` repeats that timing, which turns two drawings into a cycle (a gallop with `"loop": 0.36`, one drawing `"to": 0.18`, the other `"from": 0.18`).
+- **`fade`** (seconds): how long this drawing dissolves into the next. It only applies when both drawings set it, which is meant for edits of one image whose outlines mostly match (the fire cat's lying, dozing and yawning drawings use 0.3). Any other change uses a quick 0.18 s dissolve, so very different outlines don't ghost. Either way the two drawings stretch towards each other's outline (size and centre) as they dissolve, so a swap reads as the body moving.
 - **`front`**: limbs to draw over the body instead of behind it, e.g. `"front": ["armRight"]` for a paw that waves in front of the face.
 - **`transition`** (instead of `anims`): a pose such as a three-quarter turn that plays for a moment whenever the companion starts or stops one of the listed animations, e.g. `"transition": ["walk", "run"]`. Several transition poses play in order of their `step` (0 = nearest the front view), forwards when turning to the side and backwards when turning to face you. Turning round while side-on goes back towards the front and out the other way. Draw them as edits of one image so the body stays the same size and in the same place.
 - **Wall poses** (`climb`, `cling`, `descend`) are drawn with the wall on the right. Put `feet[0]` 75 screen px (half the hitbox width) left of where the wall is in the image, so the paws touch the screen edge. The app mirrors the drawing for the left wall.

@@ -51,7 +51,8 @@
       case 'yawn':
       case 'curlYawn':
       case 'wake': {
-        const k = Math.sin(Math.PI * clamp(at / 2.4, 0, 1));
+        // Waking, the yawn comes after it has lain up (see the drawings' timing in parts.json).
+        const k = Math.sin(Math.PI * clamp(anim === 'wake' ? (at - 1.7) / 1.2 : at / 2.4, 0, 1));
         p.mouth = k;
         p.eyes = 1 - k * 0.9;
         p.armL = p.armR = 0.15 + k * 2.6;
@@ -59,10 +60,12 @@
         p.bob = -k * 4;
         p.mood = 'sleepy';
         p.fx = k > 0.3 ? '~' : null;
+        // Eyes opening from sleep, then two slow, sleepy blinks.
+        if (anim === 'wake') p.eyes = at < 0.3 || (at > 0.6 && at < 0.74) || (at > 0.92 && at < 1.04) ? 0 : 1;
         break;
       }
       case 'liedown':
-        p.eyes = 0.45;
+        p.eyes = at > 0.45 && at < 0.6 ? 0 : 1; // one slow blink before it dozes off
         p.mood = 'sleepy';
         p.bob = Math.sin(T * 1.2) * 1.5;
         break;
@@ -86,6 +89,7 @@
         p.bob = w * 2;
         break;
       }
+      case 'peek':
       case 'cling':
         p.armL = p.armR = 2.75;
         p.legL = Math.sin(T * 2) * 0.25;

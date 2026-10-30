@@ -109,7 +109,7 @@ test('going to sleep lies down and yawns first, and a click on the sleeper wakes
   b.send('force', { state: 'sleep' });
   b.update(DT, { area: AREA, cursor: FAR });
   assert.equal(b.state, 'liedown');
-  run(b, 1.5);
+  run(b, 1.9);
   assert.equal(b.state, 'curlYawn');
   run(b, 3);
   assert.equal(b.state, 'sleep');
@@ -118,7 +118,7 @@ test('going to sleep lies down and yawns first, and a click on the sleeper wakes
   b.update(DT, { area: AREA, cursor: FAR });
   assert.equal(b.state, 'wake');
   assert.equal(b.anim, 'wake');
-  run(b, 4.6);
+  run(b, 4.2);
   assert.equal(b.state, 'idle');
 });
 
@@ -285,7 +285,7 @@ test('climbs down head first a little, leaps off away from the wall, lands and s
     b.update(DT, { area: AREA, cursor: FAR });
     if (seen.at(-1) !== b.state) seen.push(b.state);
   }
-  assert.deepEqual(seen.slice(0, 5), ['descend', 'pounce', 'touchdown', 'stroll', 'idle']);
+  assert.deepEqual(seen.slice(0, 6), ['descend', 'peek', 'pounce', 'touchdown', 'stroll', 'idle']);
   assert.equal(b.pos.y, b.floorY);
   assert.ok(b.pos.x < b.rightX - 150, 'moved away from the wall');
 });
@@ -437,4 +437,59 @@ test('a nap lasts at least a minute even when not tired', () => {
   assert.equal(b.state, 'sleep');
   run(b, 120);
   assert.notEqual(b.state, 'sleep');
+});
+
+test('resting (focus or away) sends it to bed, keeps it asleep through cursor swipes, and wakes it when cleared', () => {
+  const b = make(4);
+  landed(b);
+  b.send('force', { state: 'idle' });
+  run(b, DT);
+  b.send('rest', { reason: 'focus', on: true });
+  run(b, 5);
+  assert.equal(b.state, 'sleep');
+  // A fast cursor nearby would wake an ordinary nap; not this one. Far past a nap's length too.
+  const c = b.center();
+  for (let i = 0; i < 30; i++) b.update(DT, { area: AREA, cursor: { x: c.x + (i % 2 ? 60 : -60), y: c.y } });
+  run(b, 300);
+  assert.equal(b.state, 'sleep');
+  // Away as well: clearing one reason isn't enough.
+  b.send('rest', { reason: 'away', on: true });
+  b.send('rest', { reason: 'focus', on: false });
+  run(b, 1);
+  assert.equal(b.state, 'sleep');
+  b.send('rest', { reason: 'away', on: false });
+  run(b, DT);
+  assert.equal(b.state, 'wake');
+});
+
+test('woken by a click while resting, it goes back to bed', () => {
+  const b = make(4);
+  landed(b);
+  b.send('rest', { reason: 'focus', on: true });
+  run(b, 12);
+  assert.equal(b.state, 'sleep');
+  b.send('drag-start');
+  b.send('drag-end');
+  run(b, DT);
+  assert.equal(b.state, 'wake');
+  run(b, 12);
+  assert.equal(b.state, 'sleep');
+});
+
+test('a meow event meows', () => {
+  const b = make();
+  b.send('meow');
+  run(b, DT);
+  assert.equal(b.meows, 1);
+});
+
+test('a cursor resting nearby does not pull it away the moment it stops', () => {
+  const b = make(3);
+  landed(b);
+  const c = b.center();
+  const cursor = { x: c.x + 300, y: c.y };
+  run(b, 2, cursor);
+  b.send('force', { state: 'idle' });
+  run(b, 1, cursor);
+  assert.equal(b.state, 'idle');
 });

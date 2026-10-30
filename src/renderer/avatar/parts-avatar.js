@@ -22,17 +22,18 @@
   // straight up, with just a tremble.
   const TAIL_ROPE_POSE = { mad: { range: 0, lean: -38, curl: 0, mode: 'none', drag: 0, ripple: 0.006, rspeed: 34 } }; // tilted out, so the head doesn't hide it
   const QUADRUPED_SWING = 0.6; // four legs swing less than two
-  const TURN_STEP = 0.13; // seconds each drawing of a turn shows
-  const TURN_FADE_TIME = 0.07; // dissolve between the drawings of a turn
+  const TURN_STEP = 0.15; // seconds each drawing of a turn shows
+  const TURN_FADE_TIME = 0.1; // dissolve between the drawings of a turn
   // Turning happens on the floor: never on a wall, in the air or being held.
-  const NO_TURN = new Set(['climb', 'cling', 'descend', 'pounce', 'fall', 'dragged', 'land']);
-  const FADE_TIME = 0.12; // seconds one drawing dissolves into the next
-  const CYCLE_FADE_TIME = 0.04; // between the frames of a looping cycle (a gallop)
+  const NO_TURN = new Set(['climb', 'cling', 'descend', 'peek', 'pounce', 'fall', 'dragged', 'land']);
+  const FADE_TIME = 0.18; // seconds one drawing dissolves into the next
+  const CYCLE_FADE_TIME = 0.06; // between the frames of a looping cycle (a gallop)
+  const MORPH_LIMIT = 1.6; // how far a drawing stretches towards the other's outline in a swap
   // Limb swing for pose drawings (the main drawing follows pose.js instead):
   // [speed rad/s, {limb: amplitude rad}, {limb: rest offset rad}]; limbs alternate
   // by the amplitude's sign.
   const GAIT = {
-    climb: [7, { armL: 0.14, legL: -0.18, legR: 0.18 }],
+    climb: [7, { armL: 0.14, armR: -0.14, legL: -0.18, legR: 0.18 }],
     descend: [6, { armL: 0.14, legL: -0.18, legR: 0.18 }], // backwards, with the climb drawing
     cling: [2, { armL: 0.04, legL: 0.06, legR: -0.06 }],
     // Waves from the drawn pose in toward the face (the arm is drawn in front of it):
@@ -45,13 +46,19 @@
   const MOTION = {
     climb: (T) => ({ y: -Math.abs(sin(T * 7)) * 4, rot: sin(T * 7) * 0.03 }),
     descend: (T) => ({ y: Math.abs(sin(T * 6)) * 4, rot: sin(T * 6) * 0.03 }),
-    pounce: (T) => ({ rot: -0.12 }), // nose a little up, launching off the wall
+    pounce: (T, p, vx, at) => ({ rot: Math.min(0.2, -0.28 + at * 0.6) }), // nose up off the wall, down for the landing
     touchdown: (T, p, vx, at) => ({ sy: 1 - 0.06 * Math.sin(Math.PI * Math.min(1, at / 0.3)) }),
     cling: (T) => ({ sy: 1 + sin(T * 2.2) * 0.015, rot: sin(T * 1.1) * 0.025 }),
+    // Holds still, then coils up just before the leap.
+    peek: (T, p, vx, at) => ({ ...MOTION.cling(T), sy: 1 + sin(T * 2.2) * 0.015 - 0.07 * Math.max(0, Math.min(1, (at - 0.65) / 0.3)) }),
     fall: (T) => ({ rot: sin(T * 4) * 0.06, y: sin(T * 7) * 1.5, sy: 1 + sin(T * 7) * 0.015 }),
     dragged: (T, p, vx) => ({ top: true, rot: Math.max(-0.5, Math.min(0.5, -vx * 0.0005)) + sin(T * 2.6) * 0.07 }),
     startled: (T) => ({ x: sin(T * 55) * 1.5, sy: 1 + Math.abs(sin(T * 12)) * 0.03 }),
-    run: (T) => ({ y: -Math.abs(sin(T * 11)) * 9, rot: sin(T * 11) * 0.03 }),
+    // In step with the two drawings' 0.36 s loop: airborne while stretched, down while gathered.
+    run: (T, p, vx, at) => {
+      const w = (at / 0.36) * 2 * Math.PI;
+      return { y: -(0.5 + 0.5 * sin(w)) * 9, rot: Math.cos(w) * 0.05 };
+    },
     curlYawn: (T) => MOTION.sleep(T), // same breathing, so yawning into sleep is seamless
     wake: (T, p) => ({ sx: 1 + p.mouth * 0.04, sy: 1 - p.mouth * 0.03 }),
     liedown: (T) => MOTION.sleep(T),
@@ -159,6 +166,9 @@
       view: new PIXI.Container(),
       quadruped: !!spec.quadruped,
       still: !!spec.still,
+      // Seconds to dissolve between two drawings that both set it (edits of one image,
+      // whose outlines mostly match); a quick FADE_TIME otherwise, so different shapes don't ghost.
+      fade: spec.fade,
       cycle: !!spec.loop,
       flipY: !!spec.flipY, // drawn upside down (e.g. the climb drawing, head first going down)
       lean: spec.lean ?? 1, // how much of the pose's lean to apply (a wide drawing needs less)
@@ -411,9 +421,10 @@
       if (rig !== this.rig) {
         // The old drawing stays on top, frozen, and dissolves away over the new one.
         if (this.fading) this.fading.view.visible = false;
-        this.fadeTime = rig.cycle && this.rig.cycle ? CYCLE_FADE_TIME
-          : rig.turnStep || this.rig.turnStep ? TURN_FADE_TIME : FADE_TIME;
+        this.fadeTime = rig.fade && this.rig.fade ? Math.min(rig.fade, this.rig.fade)
+          : rig.cycle && this.rig.cycle ? CYCLE_FADE_TIME : rig.turnStep || this.rig.turnStep ? TURN_FADE_TIME : FADE_TIME;
         this.fading = this.rig;
+        this.morph = { pending: true };
         this.fadeT = 0;
         this.body.setChildIndex(this.rig.view, this.body.children.length - 1);
         rig.view.visible = true;
@@ -424,16 +435,36 @@
       if (this.fading) {
         this.fadeT += dt;
         const t = Math.min(1, this.fadeT / this.fadeTime);
-        this.fading.view.alpha = 1 - t;
+        this.fading.view.alpha = (1 - t) * (1 - t); // gone early: the two never show evenly as a double image
         if (t >= 1) {
           this.fading.view.visible = false;
           this.fading.view.alpha = 1;
           this.fading = null;
+          this.morph = null;
         }
       }
       // During a turn each step keeps the way it faces, so it mirrors only at the front view.
       const facing = (step ? step.facing : facingNow) * (rig.facesLeft ? -1 : 1);
+      const facingBefore = this.root.scale.x;
       this.root.scale.x = facing;
+      if (this.morph?.pending) {
+        // The two drawings trade outlines as they dissolve, so a swap reads as the body
+        // moving: scale and centre, worked out on screen as they may face opposite ways.
+        const old = this.fading;
+        const limit = (v) => Math.max(1 / MORPH_LIMIT, Math.min(MORPH_LIMIT, v));
+        const sx = limit((old.maxX - old.minX) / (rig.maxX - rig.minX));
+        const oldCentre = ((old.minX + old.maxX) / 2) * facingBefore;
+        const newCentre = ((rig.minX + rig.maxX) / 2) * facing;
+        const v = old.view;
+        this.morph = {
+          sx,
+          sy: limit(old.headTop / rig.headTop),
+          from: oldCentre - newCentre * sx, // where the new one starts, off its own place
+          to: newCentre - oldCentre / sx, // where the old one ends up
+          facingBefore,
+          base: { x: v.x, sx: v.scale.x, sy: v.scale.y, rot: v.rotation },
+        };
+      }
       // A `still` pose (curled up asleep) keeps its place: no bob, squash or lean.
       this.body.y = rig.still ? 0 : p.bob + p.sit * rig.sitDrop;
       this.body.scale.set(rig.still ? 1 : 2 - p.squash, rig.still ? 1 : p.squash);
@@ -449,6 +480,26 @@
         rig.view.position.set(m.x || 0, pivotY + (m.y || 0));
         rig.view.rotation = m.rot || 0;
         rig.view.scale.set(m.sx || 1, (m.sy || 1) * (rig.flipY ? -1 : 1));
+      } else {
+        rig.view.position.set(0, 0);
+        rig.view.scale.set(1, 1);
+        rig.view.rotation = 0;
+      }
+      if (this.morph && this.fading) {
+        const { sx, sy, from, to, base, facingBefore } = this.morph;
+        const t = Math.min(1, this.fadeT / this.fadeTime);
+        const e = t * t * (3 - 2 * t);
+        const v = rig.view;
+        v.x += from * facing * (1 - e);
+        v.scale.x *= sx + (1 - sx) * e;
+        v.scale.y *= sy + (1 - sy) * e;
+        // The old drawing keeps facing the way it did, whatever the new one does.
+        const same = facingBefore * facing;
+        const o = this.fading.view;
+        o.x = base.x * same + to * facing * e;
+        o.scale.x = base.sx * same * (1 + (1 / sx - 1) * e);
+        o.scale.y = base.sy * (1 + (1 / sy - 1) * e);
+        o.rotation = base.rot * same;
       }
       const gait = rig !== this.main && !rig.quadruped && GAIT[s.anim];
       if (gait) {

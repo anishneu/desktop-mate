@@ -54,7 +54,7 @@ Any animation that has no motion mapped still works: the idle motion plays and t
 
 ## 3. Desktop window
 
-- One window, 300×400 DIP, `transparent`, `frame: false`, `skipTaskbar`, `alwaysOnTop('screen-saver')`.
+- One window, 340×400 DIP, `transparent`, `frame: false`, `skipTaskbar`, `alwaysOnTop('screen-saver')`.
 - **The window *is* the character's position.** The main process calls `setBounds` each tick (only when it changed). This is much cheaper than a full-screen overlay and keeps the rest of the desktop untouched.
 - **Click-through:** `setIgnoreMouseEvents(true, { forward: true })`. Each frame the renderer hit-tests the cursor position that main sends with every tick, and flips interactivity only over the character or the bubble. This uses tick data rather than `mousemove`, so it stays correct while the window slides under a still cursor.
 - **Coordinates:** the brain works in screen DIPs on the work area of the display nearest the character, so the taskbar is the floor, and multiple monitors and DPI scaling just work.
@@ -73,7 +73,7 @@ stateDiagram-v2
   toWall --> climb --> cling
   cling --> climb
   cling --> fall : let go
-  cling --> descend --> pounce --> touchdown --> stroll --> idle : climb down, leap off
+  cling --> descend --> peek --> pounce --> touchdown --> stroll --> idle : climb down, look, leap off
   sit --> yawn --> sleep --> wake --> idle
   idle --> approach : cursor resting nearby
   approach --> happy
@@ -95,7 +95,9 @@ Each tick runs in priority order:
 
 ## 5. Task layer (`src/main/tasks.js`)
 
-A registry of tools `{ name, description, parse(text) → args | null, run(args, ctx) }`. Today a typed command is matched by the `parse` regexes. The shape is deliberately the same as LLM function calling, so the next step is to send unmatched text to an LLM with these tools declared and route its tool calls back through `run`. Side effects only happen through `ctx` (`say`, `behave`, `openExternal`, `setTimer`), which keeps tools testable and makes permissions easy to audit.
+A registry of tools `{ name, description, parse(text) → args | null, run(args, ctx) }`. Today a typed command is matched by the `parse` regexes. The shape is deliberately the same as LLM function calling, so the next step is to send unmatched text to an LLM with these tools declared and route its tool calls back through `run`. Side effects only happen through `ctx` (`say`, `behave`, `openExternal`, `setTimer`, `listTimers`, `cancelTimers`, `startFocus`, `stopFocus`, `focusStatus`), which keeps tools testable and makes permissions easy to audit.
+
+Timers, repeating reminders and focus sessions live in `src/main/schedule.js`, which only talks to the companion through hooks (`say`, `meow`, `cheer`, `rest`), so it is tested with mocked timers. A focus session and being away both send the brain a `rest` event with a reason (`focus`, `away`): while any reason is set it goes to bed, ignores cursor swipes while asleep (a click still wakes it, and it soon goes back to bed), and when the last reason clears it wakes with a stretch. Being away is `powerMonitor.getSystemIdleState(300)` polled every 2 s in the main process.
 
 ## 6. Roadmap
 
@@ -103,5 +105,5 @@ A registry of tools `{ name, description, parse(text) → args | null, run(args,
 2. LLM chat with tool calling over the existing registry; streaming replies into the bubble; lip sync from TTS amplitude → `ParamMouthOpenY`.
 3. **Window-edge walking:** enumerate top-level windows (Win32 `EnumWindows`/`GetWindowRect`, e.g. through `koffi`) and treat their title bars as extra floors.
 4. Ceiling crawling (upside-down `surface: 'ceiling'`).
-5. Time-of-day sleepiness; reactions to system events (battery low, new notification, idle user).
+5. Time-of-day sleepiness; reactions to system events (battery low, new notification). Napping while you're away is done.
 6. Settings window, tray icon, autostart, packaging with electron-builder.
