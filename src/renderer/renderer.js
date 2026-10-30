@@ -21,7 +21,7 @@
   }
 
   const avatar = await createAvatar(cfg);
-  avatar.view.position.set(W / 2, H - 2);
+  avatar.view.position.set(W / 2, H - 2 - (cfg.window.overhang || 0)); // feet above the overhang
   app.stage.addChild(avatar.view);
   api.ready(); // the brain starts now, so the drop-in from the top is seen
 

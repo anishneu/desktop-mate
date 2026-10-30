@@ -62,7 +62,7 @@ Author: Anish Kuila
 | Cursor resting on the cat | Stays put and smiles (^ ^ eyes) while its tail waves in a curly S, the root half one way and the tip half the other. It no longer turns round as the cursor moves across it. |
 | Rub the cursor over its head | Happy: ^ ^ eyes, a smile, a heart, blushing cheeks and a warm glow |
 | Click | One click at a time: happy, with blushing cheeks, a warm glow and a bigger flame. Wakes it up if asleep. |
-| Click over and over | It gets cross: puffs up, glares, glows red and meows (right-click → **Sounds** to mute). More clicks keep it cross a little longer; it calms down a few seconds after you stop. |
+| Click over and over | It gets cross: puffs up, glares, glows red, holds its tail stiff and straight, and meows (right-click → **Sounds** to mute). More clicks keep it cross a little longer; it calms down a few seconds after you stop. |
 | Drag and release | Dangles from the scruff, swinging as you move it, then is thrown with your mouse's speed |
 | Circle the cursor round its head (about twice) | Gets dizzy right where it sits: spiral eyes spinning, a ring of stars, the head wobbling and a paw lifting to keep its balance. Then it comes round, dazed, and carries on. Rubbing back and forth over its head is still a pat. |
 | Swing it round in circles, then let go | Lands dizzy: spiral eyes spinning, stars round its head, head wobbling. Then it shakes it off, sits there dazed for a moment and carries on. |
@@ -110,6 +110,7 @@ Every drawing also gets procedural motion so it never looks frozen:
 | Layer | Technology | Status |
 |---|---|---|
 | Desktop window | Electron: one transparent, frameless, always-on-top (`screen-saver` level) window, 300 × 400, hidden from the taskbar. It moves with `setBounds` every tick, and the size is passed each time so Windows DPI scaling can't drift it. | Implemented |
+| Floor | Every pose stands on its paws at the same height. The window hangs 24 px below the feet (`window.overhang` in `character.json`), over the taskbar, so a tail lying on the floor in front of the cat drapes over the taskbar instead of lifting the pose. | Implemented |
 | Click-through | `setIgnoreMouseEvents(true, { forward: true })`, toggled by a per-frame hit test against the cursor position sent with each tick. It works while the window slides under a still cursor. | Implemented |
 | File serving | A privileged `app://` protocol serves the project root (with a path-traversal guard), so Live2D's loaders work with web security on | Implemented |
 | Behavior engine | Pure JS state machine: 29 states, each with `anim`, `surface` (floor / wall / air), `interruptible`, `enter` and `update` | Implemented |
@@ -135,7 +136,7 @@ Counted directly from the codebase, not estimated:
 | Behavior states | 32 |
 | Animation names | 29 |
 | Avatar types | 3 (parts, Live2D, placeholder) |
-| AI-generated source images for the fire cat | 48 (33 in use) |
+| AI-generated source images for the fire cat | 33 (all in use) |
 | Pose drawings (per-animation rigs) | 25, plus 2 turn steps |
 | PNG layers in the fire cat | 91 |
 | Cursor reactions | 6, plus click, click flurry, drag/throw and spin |

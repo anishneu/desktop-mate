@@ -36,7 +36,10 @@ function weighted(rng, options) {
 
 class Brain {
   constructor({ window, hitbox, area, tuning, rng = Math.random }) {
-    this.win = window; // { width, height } of the companion window
+    this.win = window; // { width, height, overhang } of the companion window
+    // px of the window below the feet, hanging over the taskbar: room for a tail
+    // or a paw that reaches lower than the feet.
+    this.overhang = window.overhang || 0;
     this.hit = hitbox; // { width, height } of the visible character inside it
     this.area = area; // work area of the current display
     this.tuning = { ...DEFAULT_TUNING, ...tuning };
@@ -66,10 +69,11 @@ class Brain {
   // --- geometry -------------------------------------------------------------
 
   get margin() { return (this.win.width - this.hit.width) / 2; }
-  get floorY() { return this.area.y + this.area.height - this.win.height; }
+  get floorY() { return this.area.y + this.area.height - this.win.height + this.overhang; }
+  get feetY() { return this.pos.y + this.win.height - this.overhang; }
   // Bounds keep what is actually drawn on screen. The renderer reports how far the
   // current drawing reaches (setExtent); until it does, the hitbox stands in.
-  get ceilingY() { return this.area.y - (this.ext ? this.ext.top : this.win.height - this.hit.height); }
+  get ceilingY() { return this.area.y - (this.ext ? this.ext.top : this.win.height - this.overhang - this.hit.height); }
   get leftX() { return this.area.x - (this.ext ? this.ext.left : this.margin); }
   get rightX() { return this.area.x + this.area.width - this.win.width + (this.ext ? this.ext.right : this.margin); }
   // Wall drawings are aligned to the hitbox's edge, so on a wall that edge meets the screen's.
@@ -85,7 +89,7 @@ class Brain {
   }
 
   center() {
-    return { x: this.pos.x + this.win.width / 2, y: this.pos.y + this.win.height - this.hit.height / 2 };
+    return { x: this.pos.x + this.win.width / 2, y: this.feetY - this.hit.height / 2 };
   }
 
   get anim() {
@@ -107,7 +111,7 @@ class Brain {
   // The cursor resting on the cat's body (not passing over it).
   hovered() {
     const c = this.cursor;
-    const bottom = this.pos.y + this.win.height;
+    const bottom = this.feetY;
     return Math.abs(c.x - this.center().x) < this.hit.width * 0.45 && c.y > bottom - this.hit.height && c.y < bottom && c.speed < 400;
   }
 
@@ -307,7 +311,7 @@ class Brain {
     if (s.surface !== 'floor') return;
 
     // Petting: rubbing the cursor over the head.
-    const head = { x: this.center().x, y: this.pos.y + this.win.height - this.hit.height * 0.75 };
+    const head = { x: this.center().x, y: this.feetY - this.hit.height * 0.75 };
 
     // Circling the cursor round its head: add up how far the cursor's angle about
     // the head turns. Rubbing back and forth cancels out; circles keep adding up.
