@@ -34,7 +34,8 @@
   // by the amplitude's sign.
   const GAIT = {
     climb: [7, { armL: 0.14, armR: -0.14, legL: -0.18, legR: 0.18 }],
-    descend: [6, { armL: 0.14, legL: -0.18, legR: 0.18 }], // backwards, with the climb drawing
+    descend: [6, { armL: 0.14, legL: -0.18, legR: 0.18 }], // the look-down drawing, walking
+    peek: [2, {}], // the same drawing, stopped: its legs settle and hold still
     cling: [2, { armL: 0.04, legL: 0.06, legR: -0.06 }],
     // Waves from the drawn pose in toward the face (the arm is drawn in front of it):
     // swinging outward would open a gap between the arm and the cheek it touches.
@@ -505,7 +506,8 @@
       if (gait) {
         const w = Math.sin(this.T * gait[0]);
         for (const limb of ['armL', 'armR', 'legL', 'legR']) {
-          rig[limb].rotation = w * (gait[1][limb] || 0) + (gait[2]?.[limb] || 0);
+          const target = w * (gait[1][limb] || 0) + (gait[2]?.[limb] || 0);
+          rig[limb].rotation += (target - rig[limb].rotation) * Math.min(1, dt * 14);
         }
       } else if (rig.quadruped) {
         // Diagonal gait: each back leg moves with the opposite front leg.

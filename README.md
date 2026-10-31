@@ -74,7 +74,7 @@ Author: Anish Kuila
 
 - **Walking:** a side view whose four legs swing in a diagonal gait. It blinks as it walks, eases into its stride, and turns in steps through a front-standing and a three-quarter view (also when it turns round to walk the other way).
 - **Running:** a two-drawing gallop that alternates stretched and gathered, with the body rising in the stretch and dropping as it gathers, in step with the drawings.
-- **Climbing:** the two front paws and two back legs alternate as it climbs. Climbing down has its own head-first drawing with moving legs. It stops facing straight down with its flame trailing behind, coils up, then the two gallop drawings make the leap and the landing, and it strolls on.
+- **Climbing:** the two front paws and two back legs alternate as it climbs. Climbing down has its own head-first drawing, facing straight down with its flame trailing behind and its legs walking. It stops, coils up, then the two gallop drawings make the leap and the landing, and it strolls on.
 - **Other poses:** startled, dangling, falling, landing, waving, yawning, lying down, dozing, sleeping, the four-step wake-up, dizzy after a spin (four drawings), dizzy where it sits (three), shaking it off and the two dazed recoveries each have their own drawing.
 - **Turning:** going from facing you to side-on (and back) steps through a front-standing and a three-quarter drawing, all edits of one image so the body stays the same size.
 - **Moods without new drawings:** blush, an orange or red glow and angry brows are drawn in code. Drawings with open eyes (walking, climbing, clinging, climbing down, lying, running, dangling and the dazed recoveries) blink with a closed-eye overlay. The spiral eyes on the dizzy drawings are cut out and spun.
@@ -139,7 +139,7 @@ Counted directly from the codebase, not estimated:
 | Avatar types | 3 (parts, Live2D, placeholder) |
 | AI-generated source images for the fire cat | 33 (all in use) |
 | Pose drawings (per-animation rigs) | 25, plus 2 turn steps |
-| PNG layers in the fire cat | 108 |
+| PNG layers in the fire cat | 104 |
 | Cursor reactions | 6, plus click, click flurry, drag/throw and spin |
 | Task tools | 15 (`help`, `focus`, `focus_status`, `stop_focus`, `set_timer`, `remind_at`, `list_timers`, `cancel_timers`, `pick`, `flip_coin`, `roll_dice`, `get_time`, `open_url`, `web_search`, `behave`) |
 | IPC channels | 12 |
@@ -219,7 +219,7 @@ desktop-mate/
 │   ├── character.json            Which avatar to load, window and hitbox size, tuning, Live2D motion map
 │   ├── parts/
 │   │   ├── template/             The vector chibi exported as parts, with GUIDE.png (joint diagram)
-│   │   └── fire-cat/             The fire cat: parts.json, 108 PNG layers, source_*.jpg (not packaged)
+│   │   └── fire-cat/             The fire cat: parts.json, 104 PNG layers, source_*.jpg (not packaged)
 │   ├── models/                   Live2D models (git-ignored; see its README)
 │   └── vendor/                   Live2D Cubism core (git-ignored; not redistributable)
 ├── src/
