@@ -50,7 +50,7 @@ Author: Anish Kuila
 **On launch** the cat drops in from the top of the screen, lands, and waves hello. From then on it lives on its own:
 
 - **Autonomous behavior:** it walks along the taskbar, sits, heads to a screen edge and climbs it, then hangs there for a while. It either climbs a little way down head first, leaps off away from the wall, lands on its feet and strolls on, or lets go and falls.
-- **Getting tired:** an energy need drains while it's awake. As energy drops it gives the odd standing yawn and eventually curls up to sleep for a few minutes. After waking it stays up for at least 3 minutes. Going to sleep always runs lie down, open-mouth yawn, then closed-eye sleep. When it's rested, or when you click it, it wakes up in steps: lying drowsy, getting up, a long stretch, standing, then sitting up.
+- **Getting tired:** an energy need drains while it's awake. As energy drops it gives the odd standing yawn and eventually curls up to sleep for a few minutes. After waking it stays up for at least 3 minutes. Going to sleep always runs: lying down drowsy, dozing off, curling up with a yawn, then sleep. When it's rested, or when you click it, it wakes up in steps: curled and drowsy with a couple of slow blinks, lying up, a big yawn, a long stretch, then back to sitting. The lying, dozing, yawning and stretching drawings are edits of the idle drawing, so the head stays the same size the whole way through, and the tail hangs over the taskbar where it reaches lower than the paws.
 
 **It reacts to your cursor:**
 
@@ -67,16 +67,17 @@ Author: Anish Kuila
 | Circle the cursor round its head (about twice) | Gets dizzy right where it sits: spiral eyes spinning, a ring of stars, the head wobbling and a paw lifting to keep its balance. Then it comes round, dazed, and carries on. Rubbing back and forth over its head is still a pat. |
 | Swing it round in circles, then let go | Lands dizzy: spiral eyes spinning, stars round its head, head wobbling. Then it shakes it off, sits there dazed for a moment and carries on. |
 | Double-click or **Ctrl+Alt+M** | Opens the command box |
-| Right-click | Menu: talk, actions (walk, sit, yawn, sleep, climb, cheer), toggle wandering, sounds on/off, quit |
+| Right-click | Menu: talk, focus (25 or 50 min, or stop the running one), actions (walk, sit, yawn, sleep, climb, cheer), toggle wandering, nap-when-away and sounds, quit |
+| Leave the PC for 5 minutes (or lock it) | Curls up and sleeps until you're back, then wakes with a stretch and says how long you were away. Turn it off with right-click → **Nap when I'm away**. |
 
 **Each animation uses its own drawing** (see the image above). All drawings are generated images of the same character:
 
 - **Walking:** a side view whose four legs swing in a diagonal gait. It blinks as it walks, eases into its stride, and turns in steps through a front-standing and a three-quarter view (also when it turns round to walk the other way).
-- **Running:** a two-drawing gallop that alternates stretched and gathered.
-- **Climbing:** front paws and back legs alternate as it climbs. Climbing down has its own head-first drawing, then the two gallop drawings for the leap and the landing.
-- **Other poses:** startled, dangling, falling, landing, waving, yawning, lying down, sleeping, the five-step wake-up, dizzy after a spin (four drawings), dizzy where it sits (three), shaking it off and the two dazed recoveries each have their own drawing.
+- **Running:** a two-drawing gallop that alternates stretched and gathered, with the body rising in the stretch and dropping as it gathers, in step with the drawings.
+- **Climbing:** the two front paws and two back legs alternate as it climbs. Climbing down has its own head-first drawing, facing straight down with its flame trailing behind and its legs walking. It stops, coils up, then the two gallop drawings make the leap and the landing, and it strolls on.
+- **Other poses:** startled, dangling, falling, landing, waving, yawning, lying down, dozing, sleeping, the four-step wake-up, dizzy after a spin (four drawings), dizzy where it sits (three), shaking it off and the two dazed recoveries each have their own drawing.
 - **Turning:** going from facing you to side-on (and back) steps through a front-standing and a three-quarter drawing, all edits of one image so the body stays the same size.
-- **Moods without new drawings:** blush, an orange or red glow, angry brows and the closed-eye blink on the walk are drawn or overlaid in code. The spiral eyes on the dizzy drawings are cut out and spun.
+- **Moods without new drawings:** blush, an orange or red glow and angry brows are drawn in code. Drawings with open eyes (walking, climbing, clinging, climbing down, lying, running, dangling and the dazed recoveries) blink with a closed-eye overlay. The spiral eyes on the dizzy drawings are cut out and spun.
 
 Every drawing also gets procedural motion so it never looks frozen:
 
@@ -87,7 +88,7 @@ Every drawing also gets procedural motion so it never looks frozen:
 | Whole body | bounces, sways, breathes, or trembles depending on the pose |
 | Dangling drawing | swings from the top like a pendulum, following how fast you drag it |
 
-**The command box** understands a small set of tasks: timers (`timer 5 min tea`), the time, web searches, opening links, and behaviors (`sleep`, `walk`, `climb`, `dance`). Replies appear in a speech bubble above the cat. Each tool has a `parse` step and a `run` step, and side effects only happen through a context object (`say`, `behave`, `openExternal`, `setTimer`). That keeps the tools testable and is the hook for routing free-form text through an LLM later.
+**The command box** understands a small set of tasks: focus sessions (`focus 25`), timers and reminders (`timer 5 min tea`, `remind me at 3pm to call mom`, `remind me every 30 min to drink water`), random picks (`pick pizza or sushi`, `flip a coin`, `roll 2d6`), the time, web searches, opening links, and behaviors (`sleep`, `walk`, `climb`, `dance`). Replies appear in a speech bubble above the cat. Each tool has a `parse` step and a `run` step, and side effects only happen through a context object (`say`, `behave`, `openExternal`, `setTimer`, `startFocus`, …). That keeps the tools testable and is the hook for routing free-form text through an LLM later.
 
 ## Tech stack
 
@@ -95,11 +96,11 @@ Every drawing also gets procedural motion so it never looks frozen:
 |---|---|---|
 | Runtime | **Electron 41** (Node.js 20+, Chromium) | The transparent, frameless, always-on-top window; `app://` protocol; IPC between main and renderer; menus, shortcuts, packaging target |
 | Language | **JavaScript** (CommonJS in main and core, plain scripts in the renderer) | Everything; no build step or bundler |
-| Rendering | **PixiJS 6.5** (WebGL) | The paper-doll rig: sprites on joint containers, dissolves between drawings, glow, blush and brow overlays |
+| Rendering | **PixiJS 6.5** (WebGL) | The paper-doll rig: sprites on joint containers, dissolves that stretch between drawings' outlines, glow, blush and brow overlays |
 | Live2D | **pixi-live2d-display 0.4** with the **Cubism 4** core | The optional Live2D avatar (core and models downloaded separately) |
 | Browser APIs | **Canvas 2D**, **Web Audio**, `Image.decode()` | Trimming layers at load, the glow gradient, and the synthesized meow (no audio files) |
 | Behavior | Pure JS state machine (`src/core/`) | Physics, needs, cursor reactions; no Electron imports, so it runs under Node |
-| Tests | **`node:test`** + `node:assert` | 22 tests with a seeded RNG for the brain, plus the command parser |
+| Tests | **`node:test`** + `node:assert` | 37 tests: the brain with a seeded RNG, the command parser, and timers and focus sessions with mocked timers |
 | Packaging | **electron-builder 26** | NSIS installer and portable exe for Windows |
 | CI/CD | **GitHub Actions** | Syntax check and tests on Ubuntu and Windows; tagged releases build and publish both executables |
 | Character art | **Google Gemini** (image generation) | Every drawing of the fire cat, generated as edits of one image so the character stays consistent |
@@ -109,7 +110,7 @@ Every drawing also gets procedural motion so it never looks frozen:
 
 | Layer | Technology | Status |
 |---|---|---|
-| Desktop window | Electron: one transparent, frameless, always-on-top (`screen-saver` level) window, 300 × 400, hidden from the taskbar. It moves with `setBounds` every tick, and the size is passed each time so Windows DPI scaling can't drift it. | Implemented |
+| Desktop window | Electron: one transparent, frameless, always-on-top (`screen-saver` level) window, 340 × 400, hidden from the taskbar. It moves with `setBounds` every tick, and the size is passed each time so Windows DPI scaling can't drift it. | Implemented |
 | Floor | Every pose stands on its paws at the same height. The window hangs 24 px below the feet (`window.overhang` in `character.json`), over the taskbar, so a tail lying on the floor in front of the cat drapes over the taskbar instead of lifting the pose. | Implemented |
 | Click-through | `setIgnoreMouseEvents(true, { forward: true })`, toggled by a per-frame hit test against the cursor position sent with each tick. It works while the window slides under a still cursor. | Implemented |
 | File serving | A privileged `app://` protocol serves the project root (with a path-traversal guard), so Live2D's loaders work with web security on | Implemented |
@@ -138,11 +139,11 @@ Counted directly from the codebase, not estimated:
 | Avatar types | 3 (parts, Live2D, placeholder) |
 | AI-generated source images for the fire cat | 33 (all in use) |
 | Pose drawings (per-animation rigs) | 25, plus 2 turn steps |
-| PNG layers in the fire cat | 91 |
+| PNG layers in the fire cat | 104 |
 | Cursor reactions | 6, plus click, click flurry, drag/throw and spin |
-| Task tools | 6 (`help`, `set_timer`, `get_time`, `open_url`, `web_search`, `behave`) |
+| Task tools | 15 (`help`, `focus`, `focus_status`, `stop_focus`, `set_timer`, `remind_at`, `list_timers`, `cancel_timers`, `pick`, `flip_coin`, `roll_dice`, `get_time`, `open_url`, `web_search`, `behave`) |
 | IPC channels | 12 |
-| Automated tests | 26, across 2 files |
+| Automated tests | 37, across 3 files |
 | CI workflows | 2 (CI, release) |
 | Build targets | 2 (NSIS installer, portable exe) |
 
@@ -218,7 +219,7 @@ desktop-mate/
 │   ├── character.json            Which avatar to load, window and hitbox size, tuning, Live2D motion map
 │   ├── parts/
 │   │   ├── template/             The vector chibi exported as parts, with GUIDE.png (joint diagram)
-│   │   └── fire-cat/             The fire cat: parts.json, 91 PNG layers, source_*.jpg (not packaged)
+│   │   └── fire-cat/             The fire cat: parts.json, 104 PNG layers, source_*.jpg (not packaged)
 │   ├── models/                   Live2D models (git-ignored; see its README)
 │   └── vendor/                   Live2D Cubism core (git-ignored; not redistributable)
 ├── src/
@@ -227,6 +228,7 @@ desktop-mate/
 │   │   └── states.js             The state table
 │   ├── main/
 │   │   ├── main.js               Window, 60 Hz tick, app:// protocol, IPC, menu, shortcut, snapshot tool
+│   │   ├── schedule.js           Timers, reminders and focus sessions
 │   │   └── tasks.js              Tool registry for typed commands
 │   ├── preload/
 │   │   └── preload.js            The IPC bridge exposed to the page as window.mate
@@ -262,7 +264,15 @@ Type these into the command box (double-click the cat or press **Ctrl+Alt+M**):
 |---|---|
 | `help` | Lists what it understands |
 | `time` | Says the current time |
+| `focus` / `focus 50` / `focus 50 with a 10 min break` | Starts a focus session (25 min with a 5 min break by default). The cat naps on the taskbar while you work, wakes with a stretch when the break starts, and meows when the break is over. |
+| `time left` / `stop focus` | How long is left of the session or break / ends it |
 | `timer 5 min tea` | Sets a timer of up to 24 hours. The cat tells you when it's done. |
+| `remind me in 10 min to stretch` | Same as a timer, with a reminder |
+| `remind me at 3pm to call mom` | A reminder at a time of day (`15:30` works too; without am/pm it's whichever comes first) |
+| `remind me every 30 min to drink water` | Repeats until you cancel it |
+| `timers` / `cancel timers` | Lists what's pending / cancels all timers and reminders |
+| `pick pizza, sushi or tacos` | Picks one for you (also `choose between …`) |
+| `flip a coin` / `roll` / `roll a d20` / `roll 2d6` | Coin flips and dice |
 | `search cute cats` | Opens a DuckDuckGo search in your browser |
 | `open https://…` | Opens an http/https link in your browser |
 | `sleep` / `nap` | Yawns, then sleeps |
@@ -273,9 +283,9 @@ Type these into the command box (double-click the cat or press **Ctrl+Alt+M**):
 
 ## Limitations
 
-- **Few in-between frames:** pose drawings dissolve into each other in about a tenth of a second rather than morphing. Only the turn and a few sequences (waking up, dizzy, landing, the gallop) have in-between drawings. Each pose is one drawing whose limbs, tail and body move; nothing changes shape the way a frame-by-frame animation would.
-- **Mostly fixed faces:** the front-facing drawing blinks and changes expression, and the walk blinks. The other drawings keep the face they were drawn with, apart from the yawn's open-mouth frame and the dizzy drawings' spinning eyes.
-- **Different proportions:** the AI-generated poses don't share exact proportions (the gallop and wall poses have a longer body and a smaller head). Each pose is scaled so its head roughly matches the idle drawing's, but the gallop is capped by the 300 px window, so its head stays a little small.
+- **Few in-between frames:** pose drawings swap in a short dissolve (about 0.2 s) while each stretches towards the other's outline, so the swap reads as the body moving, but this is not true frame-by-frame in-betweening. Only the turn and a few sequences (waking up, dizzy, landing, the gallop) have in-between drawings. Each pose is one drawing whose limbs, tail and body move; nothing changes shape the way a frame-by-frame animation would.
+- **Mostly fixed faces:** the front-facing drawing changes expression. The other drawings keep the face they were drawn with, apart from blinking, the yawn's open-mouth frame and the dizzy drawings' spinning eyes.
+- **Different proportions:** the AI-generated poses don't share exact proportions. Each pose is scaled so its head roughly matches the idle drawing's, and the gallop's stretched drawing just fits the 340 px window.
 - **Screen edges only:** the cat walks the taskbar and climbs the screen edges, not the tops of other windows. That needs Win32 window enumeration and is on the [roadmap](docs/ARCHITECTURE.md).
 - **No language model yet:** commands are matched by regular expressions, so phrasing outside those patterns isn't understood. The tool registry is already shaped for LLM function calling, but no model is wired in.
 - **Live2D needs your own files:** the Live2D path hasn't been tested with a real model in this repository. The Cubism core and sample models can't be redistributed, so they have to be downloaded separately.

@@ -6,10 +6,11 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
-const { app, BrowserWindow, Menu, globalShortcut, ipcMain, net, protocol, screen, shell } = require('electron');
+const { app, BrowserWindow, Menu, globalShortcut, ipcMain, net, powerMonitor, protocol, screen, shell } = require('electron');
 const { Brain } = require('../core/brain');
 const { STATES } = require('../core/states');
 const tasks = require('./tasks');
+const { createSchedule } = require('./schedule');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const character = JSON.parse(fs.readFileSync(path.join(ROOT, 'assets', 'character.json'), 'utf8'));
@@ -20,11 +21,16 @@ const snapshotArg = process.argv.find((a) => a.startsWith('--snapshot='));
 // Dev only: `--anim=climb` shows that animation whatever the state, to check its art.
 const forcedAnim = process.argv.find((a) => a.startsWith('--anim='))?.slice('--anim='.length);
 const exportDir = process.argv.find((a) => a.startsWith('--export-template='))?.slice('--export-template='.length);
+// Seconds with no keyboard or mouse input (or a locked screen) before it naps until
+// you're back. Dev: `--away-after=10` to try it quickly.
+const AWAY_AFTER = Number(process.argv.find((a) => a.startsWith('--away-after='))?.slice('--away-after='.length)) || 5 * 60;
 
 let win;
 let brain;
 let lastPos = '';
 let soundOn = true;
+let napWhenAway = true;
+let awaySince = 0; // ms timestamp when you went away, 0 while you're here
 
 protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { standard: true, secure: true, supportFetchAPI: true } },
@@ -110,15 +116,41 @@ function say(text) {
   win.webContents.send('mate:say', { text, duration });
 }
 
+const schedule = createSchedule({
+  say,
+  meow: () => brain.send('meow'),
+  cheer: () => brain.send('force', { state: 'happy' }),
+  rest: (on) => brain.send('rest', { reason: 'focus', on }),
+});
+
 const taskContext = {
   say,
   behave: (state) => brain.send('force', { state }),
   openExternal: (url) => shell.openExternal(url),
-  setTimer: (seconds, label) => setTimeout(() => {
-    say(label ? `⏰ Time's up: ${label}!` : '⏰ Time\'s up!');
-    brain.send('force', { state: 'happy' });
-  }, seconds * 1000),
+  setTimer: schedule.timer,
+  listTimers: schedule.list,
+  cancelTimers: schedule.cancel,
+  startFocus: schedule.startFocus,
+  stopFocus: schedule.stopFocus,
+  focusStatus: schedule.focusStatus,
 };
+
+// Idle awareness: with no input for AWAY_AFTER seconds (or the screen locked) it
+// curls up and sleeps until you're back, then wakes with a stretch and says hi.
+function watchAway() {
+  setInterval(() => {
+    const away = napWhenAway && powerMonitor.getSystemIdleState(AWAY_AFTER) !== 'active';
+    if (away === Boolean(awaySince)) return;
+    brain.send('rest', { reason: 'away', on: away });
+    if (away) {
+      awaySince = Date.now() - powerMonitor.getSystemIdleTime() * 1000;
+      return;
+    }
+    const minutes = Math.round((Date.now() - awaySince) / 60000);
+    awaySince = 0;
+    if (napWhenAway) say(`Welcome back! You were away ${minutes < 60 ? `${minutes} min` : `${(minutes / 60).toFixed(1)} h`}.`);
+  }, 2000);
+}
 
 function openPrompt() {
   win.webContents.send('mate:open-prompt');
@@ -126,10 +158,17 @@ function openPrompt() {
 
 function showMenu() {
   const actions = [['Walk', 'walk'], ['Sit', 'sit'], ['Yawn', 'yawn'], ['Sleep', 'sleep'], ['Climb a wall', 'toWall'], ['Cheer', 'happy']];
+  const command = (text) => () => say(tasks.run(text, taskContext));
+  const focus = schedule.focusStatus();
+  const focusItem = focus
+    ? { label: `Stop ${focus.phase} (${Math.ceil(focus.left / 60)} min left)`, click: command('stop focus') }
+    : { label: 'Focus', submenu: [[25, 5], [50, 10]].map(([m, b]) => ({ label: `${m} min + ${b} min break`, click: command(`focus ${m} ${b} break`) })) };
   Menu.buildFromTemplate([
     { label: 'Talk to me…', accelerator: PROMPT_SHORTCUT, click: openPrompt },
+    focusItem,
     { label: 'Do something', submenu: actions.map(([label, state]) => ({ label, click: () => brain.send('force', { state }) })) },
     { label: 'Wander around', type: 'checkbox', checked: brain.autonomous, click: (item) => { brain.autonomous = item.checked; } },
+    { label: 'Nap when I\'m away', type: 'checkbox', checked: napWhenAway, click: (item) => { napWhenAway = item.checked; } },
     { label: 'Sounds', type: 'checkbox', checked: soundOn, click: (item) => { soundOn = item.checked; } },
     { type: 'separator' },
     { label: 'Quit', click: () => app.quit() },
@@ -202,6 +241,7 @@ function launch() {
       if (started) return;
       started = true;
       startLoop();
+      watchAway();
       if (snapshotArg) captureSnapshot(snapshotArg.slice('--snapshot='.length));
     };
     ipcMain.once('mate:ready', start);

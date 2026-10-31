@@ -78,64 +78,6 @@
       }
     },
     {
-      "anims": ["wake"],
-      "from": 1.5,
-      "to": 2.7,
-      "height": 218,
-      "feet": [517, 950],
-      "parts": {
-        "tail": "wake_tail.png",
-        "torso": "wake_body.png",
-        "flame": "wake_flame.png"
-      },
-      "pivots": {
-        "tail": [800, 335],
-        "flame": [466, 603]
-      }
-    },
-    {
-      "anims": ["wake"],
-      "from": 0.8,
-      "to": 1.5,
-      "height": 225,
-      "feet": [510, 886],
-      "parts": {
-        "torso": "wake_rise_body.png",
-        "flame": "wake_rise_flame.png"
-      },
-      "pivots": {
-        "flame": [224, 375]
-      }
-    },
-    {
-      "anims": ["wake"],
-      "from": 2.7,
-      "to": 3.4,
-      "facesLeft": true,
-      "height": 217,
-      "feet": [510, 886],
-      "parts": {
-        "torso": "wake_stand_body.png",
-        "flame": "wake_stand_flame.png"
-      },
-      "pivots": {
-        "flame": [771, 417]
-      }
-    },
-    {
-      "anims": ["wake"],
-      "from": 3.4,
-      "height": 243,
-      "feet": [546, 948],
-      "parts": {
-        "torso": "wake_sit_body.png",
-        "flame": "wake_sit_flame.png"
-      },
-      "pivots": {
-        "flame": [467, 313]
-      }
-    },
-    {
       "anims": ["walk"],
       "quadruped": true,
       "height": 226,
@@ -167,7 +109,8 @@
         "touchdown",
         "climb",
         "cling",
-        "descend"
+        "descend",
+        "peek"
       ],
       "step": 0,
       "lean": 0,
@@ -189,7 +132,8 @@
         "touchdown",
         "climb",
         "cling",
-        "descend"
+        "descend",
+        "peek"
       ],
       "step": 1,
       "lean": 0,
@@ -228,7 +172,8 @@
           "squash": [0.843, 1.0],
           "speed": 5.0
         }
-      ]
+      ],
+      "fade": 0.25
     },
     {
       "anims": ["dizzy"],
@@ -257,7 +202,8 @@
           "squash": [0.843, 1.0],
           "speed": 5.0
         }
-      ]
+      ],
+      "fade": 0.25
     },
     {
       "anims": ["dizzy"],
@@ -286,7 +232,8 @@
           "squash": [0.843, 1.0],
           "speed": 5.0
         }
-      ]
+      ],
+      "fade": 0.25
     },
     {
       "anims": ["dizzy"],
@@ -315,7 +262,8 @@
           "squash": [0.843, 1.0],
           "speed": 5.0
         }
-      ]
+      ],
+      "fade": 0.25
     },
     {
       "anims": ["dizzy"],
@@ -344,7 +292,8 @@
           "squash": [0.843, 1.0],
           "speed": 5.0
         }
-      ]
+      ],
+      "fade": 0.25
     },
     {
       "anims": ["shakeOff"],
@@ -364,7 +313,8 @@
       "feet": [512, 923],
       "parts": {
         "torso": "recover_body.png",
-        "flame": "recover_flame.png"
+        "flame": "recover_flame.png",
+        "blink": "recover_blink.png"
       },
       "pivots": {
         "flame": [507, 381]
@@ -395,7 +345,8 @@
           "squash": [1.0, 0.991],
           "speed": 5.0
         }
-      ]
+      ],
+      "fade": 0.25
     },
     {
       "anims": ["headDizzy"],
@@ -424,7 +375,8 @@
           "squash": [1.0, 0.991],
           "speed": 5.0
         }
-      ]
+      ],
+      "fade": 0.25
     },
     {
       "anims": ["headDizzy"],
@@ -453,7 +405,8 @@
           "squash": [1.0, 0.991],
           "speed": 5.0
         }
-      ]
+      ],
+      "fade": 0.25
     },
     {
       "anims": ["headDizzy"],
@@ -482,7 +435,8 @@
           "squash": [1.0, 0.981],
           "speed": 5.0
         }
-      ]
+      ],
+      "fade": 0.25
     },
     {
       "anims": ["headDizzy"],
@@ -511,7 +465,8 @@
           "squash": [1.0, 0.981],
           "speed": 5.0
         }
-      ]
+      ],
+      "fade": 0.25
     },
     {
       "anims": ["headRecover"],
@@ -519,7 +474,8 @@
       "feet": [512, 920],
       "parts": {
         "torso": "idle_recover_body.png",
-        "flame": "idle_recover_flame.png"
+        "flame": "idle_recover_flame.png",
+        "blink": "idle_recover_blink.png"
       },
       "pivots": {
         "flame": [507, 408]
@@ -569,128 +525,16 @@
       }
     },
     {
-      "anims": ["run"],
-      "to": 0.18,
-      "loop": 0.36,
-      "lean": 0.3,
-      "height": 172,
-      "feet": [508, 800],
-      "parts": {
-        "torso": "run_body.png"
-      }
-    },
-    {
-      "anims": ["run"],
-      "from": 0.18,
-      "loop": 0.36,
-      "lean": 0.3,
-      "height": 240,
-      "feet": [493, 924],
-      "parts": {
-        "torso": "run_gather_body.png"
-      }
-    },
-    {
-      "anims": ["startled"],
-      "height": 290,
-      "feet": [513, 964],
-      "parts": {
-        "torso": "startled_body.png",
-        "flame": "startled_flame.png"
-      },
-      "pivots": {
-        "flame": [872, 498]
-      }
-    },
-    {
       "anims": ["dragged"],
       "height": 259,
       "feet": [511, 973],
       "parts": {
         "torso": "dragged_body.png",
-        "flame": "dragged_flame.png"
+        "flame": "dragged_flame.png",
+        "blink": "dragged_blink.png"
       },
       "pivots": {
         "flame": [507, 278]
-      }
-    },
-    {
-      "anims": ["cling"],
-      "height": 334,
-      "feet": [494, 981],
-      "parts": {
-        "tail": "cling_tail.png",
-        "torso": "cling_body.png",
-        "flame": "cling_flame.png"
-      },
-      "pivots": {
-        "tail": [520, 730],
-        "flame": [527, 222]
-      }
-    },
-    {
-      "anims": ["descend"],
-      "height": 323,
-      "feet": [531, 958],
-      "parts": {
-        "tail": "descend_tail.png",
-        "torso": "descend_body.png",
-        "flame": "descend_flame.png"
-      },
-      "pivots": {
-        "tail": [672, 372],
-        "flame": [514, 855]
-      }
-    },
-    {
-      "anims": ["climb"],
-      "height": 333,
-      "feet": [489, 990],
-      "parts": {
-        "armLeft": "climb_armLeft.png",
-        "legLeft": "climb_legLeft.png",
-        "legRight": "climb_legRight.png",
-        "tail": "climb_tail.png",
-        "torso": "climb_body.png",
-        "flame": "climb_flame.png"
-      },
-      "pivots": {
-        "shoulderLeft": [625, 420],
-        "hipLeft": [652, 700],
-        "hipRight": [615, 760],
-        "tail": [510, 740],
-        "flame": [630, 243]
-      }
-    },
-    {
-      "anims": ["liedown"],
-      "height": 179,
-      "feet": [512, 840],
-      "still": true,
-      "pivots": {
-        "flame": [395, 470]
-      },
-      "parts": {
-        "torso": "liedown_body.png",
-        "flame": "sleep_flame.png"
-      }
-    },
-    {
-      "anims": ["pounce"],
-      "lean": 0.3,
-      "height": 172,
-      "feet": [508, 800],
-      "parts": {
-        "torso": "run_body.png"
-      }
-    },
-    {
-      "anims": ["touchdown"],
-      "lean": 0.3,
-      "height": 240,
-      "feet": [493, 924],
-      "parts": {
-        "torso": "run_gather_body.png"
       }
     },
     {
@@ -703,9 +547,201 @@
       },
       "parts": {
         "torso": "liedown_body.png",
-        "flame": "sleep_flame.png"
+        "flame": "sleep_flame.png",
+        "blink": "liedown_blink.png"
       },
-      "to": 0.8
+      "to": 1.2
+    },
+    {
+      "anims": ["climb"],
+      "height": 284,
+      "feet": [519, 975],
+      "parts": {
+        "armLeft": "climb_armLeft.png",
+        "armRight": "climb_armRight.png",
+        "legLeft": "climb_legLeft.png",
+        "legRight": "climb_legRight.png",
+        "tail": "climb_tail.png",
+        "torso": "climb_body.png",
+        "flame": "climb_flame.png",
+        "blink": "climb_blink.png"
+      },
+      "pivots": {
+        "shoulderLeft": [628, 405],
+        "shoulderRight": [640, 515],
+        "hipLeft": [668, 718],
+        "hipRight": [612, 785],
+        "tail": [530, 785],
+        "flame": [449, 250]
+      },
+      "fade": 0.25
+    },
+    {
+      "anims": ["cling"],
+      "height": 287,
+      "feet": [519, 975],
+      "parts": {
+        "tail": "cling_tail.png",
+        "torso": "cling_body.png",
+        "flame": "cling_flame.png",
+        "blink": "cling_blink.png"
+      },
+      "pivots": {
+        "tail": [530, 785],
+        "flame": [493, 282]
+      },
+      "fade": 0.25
+    },
+    {
+      "anims": ["liedown"],
+      "fade": 0.3,
+      "to": 1.0,
+      "height": 205,
+      "feet": [512, 843],
+      "parts": {
+        "torso": "lie_body.png",
+        "flame": "lie_flame.png",
+        "blink": "lie_blink.png"
+      },
+      "pivots": {
+        "flame": [412, 508]
+      }
+    },
+    {
+      "anims": ["liedown"],
+      "fade": 0.3,
+      "from": 1.0,
+      "height": 188,
+      "feet": [509, 843],
+      "parts": {
+        "torso": "doze_body.png",
+        "flame": "doze_flame.png"
+      },
+      "pivots": {
+        "flame": [507, 346]
+      }
+    },
+    {
+      "anims": ["wake"],
+      "fade": 0.3,
+      "from": 1.2,
+      "to": 1.8,
+      "height": 205,
+      "feet": [512, 843],
+      "parts": {
+        "torso": "lie_body.png",
+        "flame": "lie_flame.png",
+        "blink": "lie_blink.png"
+      },
+      "pivots": {
+        "flame": [412, 508]
+      }
+    },
+    {
+      "anims": ["wake"],
+      "fade": 0.3,
+      "from": 1.8,
+      "to": 2.7,
+      "height": 205,
+      "feet": [512, 843],
+      "parts": {
+        "torso": "wake_yawn_body.png",
+        "flame": "wake_yawn_flame.png"
+      },
+      "pivots": {
+        "flame": [505, 410]
+      }
+    },
+    {
+      "anims": ["wake"],
+      "fade": 0.2,
+      "from": 2.7,
+      "height": 228,
+      "feet": [500, 929],
+      "parts": {
+        "torso": "stretch_body.png",
+        "flame": "stretch_flame.png"
+      },
+      "pivots": {
+        "flame": [446, 436]
+      }
+    },
+    {
+      "anims": ["startled"],
+      "height": 274,
+      "feet": [501, 915],
+      "parts": {
+        "torso": "startled_body.png",
+        "flame": "startled_flame.png"
+      },
+      "pivots": {
+        "flame": [720, 405]
+      }
+    },
+    {
+      "anims": ["run"],
+      "to": 0.18,
+      "loop": 0.36,
+      "lean": 0.3,
+      "height": 213,
+      "feet": [495, 826],
+      "parts": {
+        "torso": "run_body.png",
+        "blink": "run_blink.png"
+      }
+    },
+    {
+      "anims": ["run"],
+      "from": 0.18,
+      "loop": 0.36,
+      "lean": 0.3,
+      "height": 213,
+      "feet": [495, 826],
+      "parts": {
+        "torso": "run_gather_body.png",
+        "blink": "run_gather_blink.png"
+      }
+    },
+    {
+      "anims": ["pounce"],
+      "lean": 0.3,
+      "height": 213,
+      "feet": [495, 826],
+      "parts": {
+        "torso": "run_body.png",
+        "blink": "run_blink.png"
+      }
+    },
+    {
+      "anims": ["touchdown"],
+      "lean": 0.3,
+      "height": 213,
+      "feet": [495, 826],
+      "parts": {
+        "torso": "run_gather_body.png",
+        "blink": "run_gather_blink.png"
+      }
+    },
+    {
+      "anims": ["descend", "peek"],
+      "height": 290,
+      "feet": [519, 975],
+      "parts": {
+        "tail": "peek_tail.png",
+        "legRight": "peek_legRight.png",
+        "legLeft": "peek_legLeft.png",
+        "armLeft": "peek_armLeft.png",
+        "torso": "peek_body.png",
+        "flame": "peek_flame.png",
+        "blink": "peek_blink.png"
+      },
+      "pivots": {
+        "tail": [535, 285],
+        "hipRight": [640, 285],
+        "hipLeft": [682, 345],
+        "shoulderLeft": [635, 570],
+        "flame": [407, 953]
+      }
     }
   ],
   "tailRope": {
