@@ -146,11 +146,11 @@ const STATES = {
     },
   },
 
-  // Lying down, drowsy, then dozing off, on the way to sleep.
+  // Getting sleepy, lying down and curling up, on the way to sleep (a video).
   liedown: {
     anim: 'liedown', surface: 'floor', interruptible: false,
     update(b) {
-      if (b.stateTime > 1.8) return 'curlYawn';
+      if (b.stateTime > 5.04) return 'curlYawn';
     },
   },
 
@@ -181,12 +181,12 @@ const STATES = {
     },
   },
 
-  // Waking up: drowsy with a couple of blinks, lying up, a yawn and a big stretch. It won't nap again for a while, even if woken early.
+  // Waking up: drowsy blinks, a yawn, a long stretch and sitting up (a video). It won't nap again for a while, even if woken early.
   wake: {
     anim: 'wake', surface: 'floor', interruptible: false,
     enter(b) { b.cooldowns.nap = b.tuning.napCooldown; },
     update(b) {
-      if (b.stateTime > 4.1) return 'idle';
+      if (b.stateTime > 6.05) return 'idle';
     },
   },
 
