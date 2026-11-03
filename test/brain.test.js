@@ -109,7 +109,7 @@ test('going to sleep lies down and yawns first, and a click on the sleeper wakes
   b.send('force', { state: 'sleep' });
   b.update(DT, { area: AREA, cursor: FAR });
   assert.equal(b.state, 'liedown');
-  run(b, 1.9);
+  run(b, 5.14);
   assert.equal(b.state, 'curlYawn');
   run(b, 3);
   assert.equal(b.state, 'sleep');
@@ -118,7 +118,7 @@ test('going to sleep lies down and yawns first, and a click on the sleeper wakes
   b.update(DT, { area: AREA, cursor: FAR });
   assert.equal(b.state, 'wake');
   assert.equal(b.anim, 'wake');
-  run(b, 4.2);
+  run(b, 6.15);
   assert.equal(b.state, 'idle');
 });
 
@@ -156,7 +156,7 @@ test('a quick yawn while awake stands; only bedtime curls up, and it will not na
   assert.equal(b.state, 'idle');
   b.energy = 0.1;
   b.send('force', { state: 'sleep' });
-  run(b, 5);
+  run(b, 7.8);
   assert.equal(b.state, 'sleep');
   b.send('drag-start');
   b.send('drag-end');
@@ -431,7 +431,7 @@ test('a nap lasts at least a minute even when not tired', () => {
   const b = make(4);
   landed(b);
   b.send('force', { state: 'sleep' });
-  run(b, 4.5); // lying down, then the yawn
+  run(b, 7.8); // lying down, then the yawn
   assert.equal(b.state, 'sleep');
   run(b, 55);
   assert.equal(b.state, 'sleep');
@@ -445,7 +445,7 @@ test('resting (focus or away) sends it to bed, keeps it asleep through cursor sw
   b.send('force', { state: 'idle' });
   run(b, DT);
   b.send('rest', { reason: 'focus', on: true });
-  run(b, 5);
+  run(b, 7.8);
   assert.equal(b.state, 'sleep');
   // A fast cursor nearby would wake an ordinary nap; not this one. Far past a nap's length too.
   const c = b.center();
@@ -472,7 +472,7 @@ test('woken by a click while resting, it goes back to bed', () => {
   b.send('drag-end');
   run(b, DT);
   assert.equal(b.state, 'wake');
-  run(b, 12);
+  run(b, 17);
   assert.equal(b.state, 'sleep');
 });
 

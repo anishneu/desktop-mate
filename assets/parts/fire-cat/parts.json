@@ -538,21 +538,6 @@
       }
     },
     {
-      "anims": ["wake"],
-      "height": 179,
-      "feet": [512, 840],
-      "still": true,
-      "pivots": {
-        "flame": [395, 470]
-      },
-      "parts": {
-        "torso": "liedown_body.png",
-        "flame": "sleep_flame.png",
-        "blink": "liedown_blink.png"
-      },
-      "to": 1.2
-    },
-    {
       "anims": ["climb"],
       "height": 284,
       "feet": [519, 975],
@@ -591,80 +576,6 @@
         "flame": [493, 282]
       },
       "fade": 0.25
-    },
-    {
-      "anims": ["liedown"],
-      "fade": 0.3,
-      "to": 1.0,
-      "height": 205,
-      "feet": [512, 843],
-      "parts": {
-        "torso": "lie_body.png",
-        "flame": "lie_flame.png",
-        "blink": "lie_blink.png"
-      },
-      "pivots": {
-        "flame": [412, 508]
-      }
-    },
-    {
-      "anims": ["liedown"],
-      "fade": 0.3,
-      "from": 1.0,
-      "height": 188,
-      "feet": [509, 843],
-      "parts": {
-        "torso": "doze_body.png",
-        "flame": "doze_flame.png"
-      },
-      "pivots": {
-        "flame": [507, 346]
-      }
-    },
-    {
-      "anims": ["wake"],
-      "fade": 0.3,
-      "from": 1.2,
-      "to": 1.8,
-      "height": 205,
-      "feet": [512, 843],
-      "parts": {
-        "torso": "lie_body.png",
-        "flame": "lie_flame.png",
-        "blink": "lie_blink.png"
-      },
-      "pivots": {
-        "flame": [412, 508]
-      }
-    },
-    {
-      "anims": ["wake"],
-      "fade": 0.3,
-      "from": 1.8,
-      "to": 2.7,
-      "height": 205,
-      "feet": [512, 843],
-      "parts": {
-        "torso": "wake_yawn_body.png",
-        "flame": "wake_yawn_flame.png"
-      },
-      "pivots": {
-        "flame": [505, 410]
-      }
-    },
-    {
-      "anims": ["wake"],
-      "fade": 0.2,
-      "from": 2.7,
-      "height": 228,
-      "feet": [500, 929],
-      "parts": {
-        "torso": "stretch_body.png",
-        "flame": "stretch_flame.png"
-      },
-      "pivots": {
-        "flame": [446, 436]
-      }
     },
     {
       "anims": ["startled"],
@@ -742,6 +653,30 @@
         "shoulderLeft": [635, 570],
         "flame": [407, 953]
       }
+    },
+    {
+      "anims": ["liedown"],
+      "still": true,
+      "scale": 0.666667,
+      "feet": [255, 564],
+      "sequence": {
+        "prefix": "seq/sleep_",
+        "count": 121,
+        "fps": 24
+      },
+      "parts": {}
+    },
+    {
+      "anims": ["wake"],
+      "still": true,
+      "scale": 0.666667,
+      "feet": [255, 564],
+      "sequence": {
+        "prefix": "seq/wake_",
+        "count": 145,
+        "fps": 24
+      },
+      "parts": {}
     }
   ],
   "tailRope": {

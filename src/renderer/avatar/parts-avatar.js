@@ -28,6 +28,7 @@
   const NO_TURN = new Set(['climb', 'cling', 'descend', 'peek', 'pounce', 'fall', 'dragged', 'land']);
   const FADE_TIME = 0.18; // seconds one drawing dissolves into the next
   const CYCLE_FADE_TIME = 0.06; // between the frames of a looping cycle (a gallop)
+  const SEQUENCE_FADE_TIME = 0.1; // into and out of a video: its ends are the drawings beside it
   const MORPH_LIMIT = 1.6; // how far a drawing stretches towards the other's outline in a swap
   // Limb swing for pose drawings (the main drawing follows pose.js instead):
   // [speed rad/s, {limb: amplitude rad}, {limb: rest offset rad}]; limbs alternate
@@ -61,8 +62,6 @@
       return { y: -(0.5 + 0.5 * sin(w)) * 9, rot: Math.cos(w) * 0.05 };
     },
     curlYawn: (T) => MOTION.sleep(T), // same breathing, so yawning into sleep is seamless
-    wake: (T, p) => ({ sx: 1 + p.mouth * 0.04, sy: 1 - p.mouth * 0.03 }),
-    liedown: (T) => MOTION.sleep(T),
     sleep: (T) => ({ sx: 1 - sin(T * 1.2) * 0.01, sy: 1 + sin(T * 1.2) * 0.02 }),
     greet: (T) => ({ y: -Math.abs(sin(T * 4.5)) * 3 }),
     // The head circles round from the feet up; shaking it off is fast and dies away.
@@ -154,13 +153,16 @@
       load(Object.entries(parts)), load(variants('eyes')), load(variants('mouth')), // tail.png too: it sets how far the tail reaches
       load(spins.map((p) => [p.part, p.part])),
     ])).map(Object.fromEntries);
-    if (!Object.keys(img).length) fail('lists no parts');
+    // `sequence`: video frames played in order once (then the last holds), all on one canvas.
+    const seq = spec.sequence;
+    const frames = seq ? await Promise.all(Array.from({ length: seq.count }, (_, i) => loadTrimmed(file(`${seq.prefix}${String(i).padStart(3, '0')}.png`)))) : [];
+    if (!Object.keys(img).length && !seq) fail('lists no parts');
 
     // Scale so the art's visible height matches spec.height on screen.
-    const all = [...Object.values(img), ...Object.values(eyes), ...Object.values(mouth)];
+    const all = [...Object.values(img), ...Object.values(eyes), ...Object.values(mouth), ...frames];
     const feet = spec.feet;
     const top = Math.min(...all.map((i) => i.y));
-    const s = (spec.height || 220) / (feet[1] - top);
+    const s = spec.scale || (spec.height || 220) / (feet[1] - top);
     const neck = pivots.neck || feet;
     const hip = pivots.hipLeft || pivots.hipRight;
     const rig = {
@@ -212,6 +214,14 @@
     rig.legL = joint(pivots.hipLeft || feet, feet, img.legLeft);
     rig.legR = joint(pivots.hipRight || feet, feet, img.legRight);
     const torso = joint(feet, feet, img.torso);
+    if (seq) {
+      rig.fps = seq.fps;
+      rig.frames = frames.map((i) => {
+        const sp = torso.addChild(sprite(i, feet));
+        sp.visible = false;
+        return sp;
+      });
+    }
     rig.armL = joint(pivots.shoulderLeft || feet, feet, img.armLeft);
     rig.armR = joint(pivots.shoulderRight || feet, feet, img.armRight);
     rig.head = joint(neck, feet, img.head);
@@ -422,7 +432,7 @@
       if (rig !== this.rig) {
         // The old drawing stays on top, frozen, and dissolves away over the new one.
         if (this.fading) this.fading.view.visible = false;
-        this.fadeTime = rig.fade && this.rig.fade ? Math.min(rig.fade, this.rig.fade)
+        this.fadeTime = rig.frames || this.rig.frames ? SEQUENCE_FADE_TIME : rig.fade && this.rig.fade ? Math.min(rig.fade, this.rig.fade)
           : rig.cycle && this.rig.cycle ? CYCLE_FADE_TIME : rig.turnStep || this.rig.turnStep ? TURN_FADE_TIME : FADE_TIME;
         this.fading = this.rig;
         this.morph = { pending: true };
@@ -453,15 +463,17 @@
         // moving: scale and centre, worked out on screen as they may face opposite ways.
         const old = this.fading;
         const limit = (v) => Math.max(1 / MORPH_LIMIT, Math.min(MORPH_LIMIT, v));
-        const sx = limit((old.maxX - old.minX) / (rig.maxX - rig.minX));
+        // A video starts and ends on the drawing beside it: nothing to stretch.
+        const plain = rig.frames || old.frames;
+        const sx = plain ? 1 : limit((old.maxX - old.minX) / (rig.maxX - rig.minX));
         const oldCentre = ((old.minX + old.maxX) / 2) * facingBefore;
         const newCentre = ((rig.minX + rig.maxX) / 2) * facing;
         const v = old.view;
         this.morph = {
           sx,
-          sy: limit(old.headTop / rig.headTop),
-          from: oldCentre - newCentre * sx, // where the new one starts, off its own place
-          to: newCentre - oldCentre / sx, // where the old one ends up
+          sy: plain ? 1 : limit(old.headTop / rig.headTop),
+          from: plain ? 0 : oldCentre - newCentre * sx, // where the new one starts, off its own place
+          to: plain ? 0 : newCentre - oldCentre / sx, // where the old one ends up
           facingBefore,
           base: { x: v.x, sx: v.scale.x, sy: v.scale.y, rot: v.rotation },
         };
@@ -473,7 +485,13 @@
       // Window speed, for the dangling swing.
       if (this.lastX !== null && dt > 0) this.vx += ((s.x - this.lastX) / dt - this.vx) * Math.min(1, dt * 8);
       this.lastX = s.x;
-      if (rig !== this.main) {
+      if (rig.frames) {
+        const shown = Math.min(rig.frames.length - 1, Math.floor(this.animT * rig.fps));
+        if (rig.shownFrame !== undefined) rig.frames[rig.shownFrame].visible = false;
+        rig.frames[shown].visible = true;
+        rig.shownFrame = shown;
+      }
+      if (rig !== this.main && !rig.frames) {
         const m = (MOTION[s.anim] || (() => ({})))(this.T, p, this.vx, this.animT);
         // Swing from the top when dangling; flip upside down about the middle.
         const pivotY = m.top ? rig.headTop : rig.flipY ? rig.headTop / 2 : 0;

@@ -50,7 +50,7 @@ Author: Anish Kuila
 **On launch** the cat drops in from the top of the screen, lands, and waves hello. From then on it lives on its own:
 
 - **Autonomous behavior:** it walks along the taskbar, sits, heads to a screen edge and climbs it, then hangs there for a while. It either climbs a little way down head first, leaps off away from the wall, lands on its feet and strolls on, or lets go and falls.
-- **Getting tired:** an energy need drains while it's awake. As energy drops it gives the odd standing yawn and eventually curls up to sleep for a few minutes. After waking it stays up for at least 3 minutes. Going to sleep always runs: lying down drowsy, dozing off, curling up with a yawn, then sleep. When it's rested, or when you click it, it wakes up in steps: curled and drowsy with a couple of slow blinks, lying up, a big yawn, a long stretch, then back to sitting. The lying, dozing, yawning and stretching drawings are edits of the idle drawing, so the head stays the same size the whole way through, and the tail hangs over the taskbar where it reaches lower than the paws.
+- **Getting tired:** an energy need drains while it's awake. As energy drops it gives the odd standing yawn and eventually curls up to sleep for a few minutes. After waking it stays up for at least 3 minutes. Going to sleep always runs: it gets sleepy, lies down and curls up in one continuous movement (121 frames of an AI-generated video that starts on the idle drawing and ends on the curled-up one), yawns, then sleeps. When it's rested, or when you click it, it wakes up the same way (145 frames of a second video): it opens its eyes sleepily, gives a big yawn, does a long stretch with its tail up, then sits back up facing you. Both videos start and end exactly on the drawings beside them, so the cat never changes size or jumps; every frame keeps the body on the ground and the fur colour matched to the drawings.
 
 **It reacts to your cursor:**
 
@@ -75,7 +75,7 @@ Author: Anish Kuila
 - **Walking:** a side view whose four legs swing in a diagonal gait. It blinks as it walks, eases into its stride, and turns in steps through a front-standing and a three-quarter view (also when it turns round to walk the other way).
 - **Running:** a two-drawing gallop that alternates stretched and gathered, with the body rising in the stretch and dropping as it gathers, in step with the drawings.
 - **Climbing:** the two front paws and two back legs alternate as it climbs. Climbing down has its own head-first drawing, facing straight down with its flame trailing behind and its legs walking. It stops, coils up, then the two gallop drawings make the leap and the landing, and it strolls on.
-- **Other poses:** startled, dangling, falling, landing, waving, yawning, lying down, dozing, sleeping, the four-step wake-up, dizzy after a spin (four drawings), dizzy where it sits (three), shaking it off and the two dazed recoveries each have their own drawing.
+- **Other poses:** startled, dangling, falling, landing, waving, yawning, falling asleep and waking up (video clips), sleeping, dizzy after a spin (four drawings), dizzy where it sits (three), shaking it off and the two dazed recoveries each have their own drawing.
 - **Turning:** going from facing you to side-on (and back) steps through a front-standing and a three-quarter drawing, all edits of one image so the body stays the same size.
 - **Moods without new drawings:** blush, an orange or red glow and angry brows are drawn in code. Drawings with open eyes (walking, climbing, clinging, climbing down, lying, running, dangling and the dazed recoveries) blink with a closed-eye overlay. The spiral eyes on the dizzy drawings are cut out and spun.
 
@@ -137,9 +137,9 @@ Counted directly from the codebase, not estimated:
 | Behavior states | 32 |
 | Animation names | 29 |
 | Avatar types | 3 (parts, Live2D, placeholder) |
-| AI-generated source images for the fire cat | 33 (all in use) |
+| AI-generated source images for the fire cat | 28 (all in use) |
 | Pose drawings (per-animation rigs) | 25, plus 2 turn steps |
-| PNG layers in the fire cat | 104 |
+| PNG layers in the fire cat | 93, plus 266 sleep and wake video frames |
 | Cursor reactions | 6, plus click, click flurry, drag/throw and spin |
 | Task tools | 15 (`help`, `focus`, `focus_status`, `stop_focus`, `set_timer`, `remind_at`, `list_timers`, `cancel_timers`, `pick`, `flip_coin`, `roll_dice`, `get_time`, `open_url`, `web_search`, `behave`) |
 | IPC channels | 12 |
@@ -219,7 +219,7 @@ desktop-mate/
 │   ├── character.json            Which avatar to load, window and hitbox size, tuning, Live2D motion map
 │   ├── parts/
 │   │   ├── template/             The vector chibi exported as parts, with GUIDE.png (joint diagram)
-│   │   └── fire-cat/             The fire cat: parts.json, 104 PNG layers, source_*.jpg (not packaged)
+│   │   └── fire-cat/             The fire cat: parts.json, 93 PNG layers, seq/ video frames, source_*.jpg (not packaged)
 │   ├── models/                   Live2D models (git-ignored; see its README)
 │   └── vendor/                   Live2D Cubism core (git-ignored; not redistributable)
 ├── src/
@@ -283,7 +283,7 @@ Type these into the command box (double-click the cat or press **Ctrl+Alt+M**):
 
 ## Limitations
 
-- **Few in-between frames:** pose drawings swap in a short dissolve (about 0.2 s) while each stretches towards the other's outline, so the swap reads as the body moving, but this is not true frame-by-frame in-betweening. Only the turn and a few sequences (waking up, dizzy, landing, the gallop) have in-between drawings. Each pose is one drawing whose limbs, tail and body move; nothing changes shape the way a frame-by-frame animation would.
+- **Few in-between frames:** pose drawings swap in a short dissolve (about 0.2 s) while each stretches towards the other's outline, so the swap reads as the body moving, but this is not true frame-by-frame in-betweening. Falling asleep and waking up are the exception: they play the frames of short AI-generated videos, so they move like real animation. Where the tail swung past the edge of the original video, the missing piece was drawn back in, so for about 0.7 s of each video the end of the tail is a simpler drawn curve rather than the video's own. Only the turn and a few sequences (dizzy, landing, the gallop) have in-between drawings. Each pose is one drawing whose limbs, tail and body move; nothing changes shape the way a frame-by-frame animation would.
 - **Mostly fixed faces:** the front-facing drawing changes expression. The other drawings keep the face they were drawn with, apart from blinking, the yawn's open-mouth frame and the dizzy drawings' spinning eyes.
 - **Different proportions:** the AI-generated poses don't share exact proportions. Each pose is scaled so its head roughly matches the idle drawing's, and the gallop's stretched drawing just fits the 340 px window.
 - **Screen edges only:** the cat walks the taskbar and climbs the screen edges, not the tops of other windows. That needs Win32 window enumeration and is on the [roadmap](docs/ARCHITECTURE.md).
