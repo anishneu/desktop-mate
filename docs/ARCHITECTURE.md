@@ -74,7 +74,9 @@ stateDiagram-v2
   cling --> climb
   cling --> fall : let go
   cling --> descend --> peek --> pounce --> touchdown --> stroll --> idle : climb down, look, leap off
-  sit --> yawn --> sleep --> wake --> idle
+  sit --> yawn --> idle
+  idle --> liedown : tired, or resting (focus / away)
+  liedown --> curlYawn --> sleep --> wake --> idle
   idle --> approach : cursor resting nearby
   approach --> happy
   idle --> startled : fast swipe

@@ -10,7 +10,7 @@ The companion is a transparent, click-through window that *is* the character. It
 - **The renderer** turns the brain's current animation name into a pose for whichever avatar is loaded.
 - **The task layer** is a small tool registry. It uses the same shape as LLM function calling, so a language model can be dropped in later without touching the tools.
 
-The bundled character, a black cat with a flame on its head, was made entirely from free AI-generated images. Each image was cut into layers, and the joints are animated in code, so no frames were hand-drawn and no rigging software was used.
+The bundled character, a black cat with a flame on its head, was made entirely from free AI-generated images, plus two short AI-generated videos for falling asleep and waking up. Each image was cut into layers, and the joints are animated in code, so no frames were hand-drawn and no rigging software was used.
 
 Author: Anish Kuila
 
@@ -77,9 +77,9 @@ Author: Anish Kuila
 - **Climbing:** the two front paws and two back legs alternate as it climbs. Climbing down has its own head-first drawing, facing straight down with its flame trailing behind and its legs walking. It stops, coils up, then the two gallop drawings make the leap and the landing, and it strolls on.
 - **Other poses:** startled, dangling, falling, landing, waving, yawning, falling asleep and waking up (video clips), sleeping, dizzy after a spin (four drawings), dizzy where it sits (three), shaking it off and the two dazed recoveries each have their own drawing.
 - **Turning:** going from facing you to side-on (and back) steps through a front-standing and a three-quarter drawing, all edits of one image so the body stays the same size.
-- **Moods without new drawings:** blush, an orange or red glow and angry brows are drawn in code. Drawings with open eyes (walking, climbing, clinging, climbing down, lying, running, dangling and the dazed recoveries) blink with a closed-eye overlay. The spiral eyes on the dizzy drawings are cut out and spun.
+- **Moods without new drawings:** blush, an orange or red glow and angry brows are drawn in code. Drawings with open eyes (walking, climbing, clinging, climbing down, running, the leap and landing, dangling and the dazed recoveries) blink with a closed-eye overlay. The spiral eyes on the dizzy drawings are cut out and spun.
 
-Every drawing also gets procedural motion so it never looks frozen:
+Every drawing also gets procedural motion so it never looks frozen (the two video clips play as filmed):
 
 | Part | Motion |
 |---|---|
@@ -103,8 +103,8 @@ Every drawing also gets procedural motion so it never looks frozen:
 | Tests | **`node:test`** + `node:assert` | 37 tests: the brain with a seeded RNG, the command parser, and timers and focus sessions with mocked timers |
 | Packaging | **electron-builder 26** | NSIS installer and portable exe for Windows |
 | CI/CD | **GitHub Actions** | Syntax check and tests on Ubuntu and Windows; tagged releases build and publish both executables |
-| Character art | **Google Gemini** (image generation) | Every drawing of the fire cat, generated as edits of one image so the character stays consistent |
-| Asset prep | **Python 3** with **NumPy**, **SciPy** and **Pillow** (offline) | Cutting the images into layers: background removal, limb and tail separation, flame extraction, blink and spiral-eye overlays. Not needed to run or build the app. |
+| Character art | **Google Gemini** (image generation), **Kling AI** (video from a start and end frame) | Every drawing of the fire cat, generated as edits of one image so the character stays consistent; the falling-asleep and waking-up videos, each made to start and end on the drawings beside it |
+| Asset prep | **Python 3** with **NumPy**, **SciPy** and **Pillow**, and **ffmpeg** (offline) | Cutting the images into layers: background removal, limb and tail separation, flame extraction, blink and spiral-eye overlays. Splitting the videos into frames, cutting them out, lining their ends up with the drawings, keeping the body on the ground, matching the fur colour, and drawing back tail the video cut off. Not needed to run or build the app. |
 
 ## Architecture
 
@@ -114,13 +114,13 @@ Every drawing also gets procedural motion so it never looks frozen:
 | Floor | Every pose stands on its paws at the same height. The window hangs 24 px below the feet (`window.overhang` in `character.json`), over the taskbar, so a tail lying on the floor in front of the cat drapes over the taskbar instead of lifting the pose. | Implemented |
 | Click-through | `setIgnoreMouseEvents(true, { forward: true })`, toggled by a per-frame hit test against the cursor position sent with each tick. It works while the window slides under a still cursor. | Implemented |
 | File serving | A privileged `app://` protocol serves the project root (with a path-traversal guard), so Live2D's loaders work with web security on | Implemented |
-| Behavior engine | Pure JS state machine: 29 states, each with `anim`, `surface` (floor / wall / air), `interruptible`, `enter` and `update` | Implemented |
+| Behavior engine | Pure JS state machine: 33 states, each with `anim`, `surface` (floor / wall / air), `interruptible`, `enter` and `update` | Implemented |
 | Physics | Gravity, air drag, wall bounce, throws from the mouse's speed, falling when a floor or wall disappears (taskbar moved, display unplugged) | Implemented |
 | Screen bounds | The renderer reports how far the current drawing reaches (`mate:extent`), and the brain keeps all of it on screen: wide poses ease in from an edge, climbing stops below the top of the screen, and wall poses stay flush with the edge | Implemented |
 | Needs | Energy drains while awake and refills while asleep, which biases the next choice toward yawning and sleeping | Implemented |
 | Cursor reactions | Startle on a fast swipe, petting on the head, curiosity and approach to a resting cursor, waking on a jiggle, a click versus a flurry of clicks, swinging it round on a drag (dizzy) | Implemented |
 | Procedural poses | `pose.js` produces bob, squash, lean, sit, head tilt, limb angles, eyes, mood, mouth and emote for every animation name; all avatars read it | Implemented |
-| Parts avatar | Full-canvas PNG layers, auto-trimmed at load, on joint pivots. Supports per-animation pose drawings (timed and looping), four-legged gaits, tail sway, flame flicker, sprite or code-drawn faces, an open-mouth frame swap, blink overlays, spinning parts, blush, brows and glow, multi-step turns, and soft joint stubs so swinging limbs never show a cut. | Implemented |
+| Parts avatar | Full-canvas PNG layers, auto-trimmed at load, on joint pivots. Supports per-animation pose drawings (timed and looping), four-legged gaits, tail sway, flame flicker, sprite or code-drawn faces, an open-mouth frame swap, blink overlays, spinning parts, blush, brows and glow, multi-step turns, soft joint stubs so swinging limbs never show a cut, and video frame sequences played once on one canvas. | Implemented |
 | Live2D avatar | pixi-live2d-display with Cubism 4: motion groups mapped per animation, eye and mouth parameters driven from the pose, cursor focus | Implemented (needs a model and the Cubism core; see Limitations) |
 | Placeholder avatar | A vector chibi used whenever the configured avatar fails to load | Implemented |
 | Task layer | Tool registry `{ name, description, parse, run }` with the same shape as LLM function calling | Implemented (regex parsing) |
@@ -134,11 +134,11 @@ Counted directly from the codebase, not estimated:
 
 | Metric | Count |
 |---|---|
-| Behavior states | 32 |
-| Animation names | 29 |
+| Behavior states | 33 |
+| Animation names | 30 |
 | Avatar types | 3 (parts, Live2D, placeholder) |
 | AI-generated source images for the fire cat | 28 (all in use) |
-| Pose drawings (per-animation rigs) | 25, plus 2 turn steps |
+| Pose drawings (per-animation rigs) | 28, plus 2 turn steps and 2 video clips |
 | PNG layers in the fire cat | 93, plus 266 sleep and wake video frames |
 | Cursor reactions | 6, plus click, click flurry, drag/throw and spin |
 | Task tools | 15 (`help`, `focus`, `focus_status`, `stop_focus`, `set_timer`, `remind_at`, `list_timers`, `cancel_timers`, `pick`, `flip_coin`, `roll_dice`, `get_time`, `open_url`, `web_search`, `behave`) |
@@ -248,6 +248,7 @@ desktop-mate/
 │           └── export-template.js  `npm run export-template`: writes the parts template
 ├── test/
 │   ├── brain.test.js             Behavior engine (seeded RNG)
+│   ├── schedule.test.js          Timers, reminders and focus sessions (mocked timers)
 │   └── tasks.test.js             Command parsing
 ├── docs/
 │   ├── ARCHITECTURE.md           Stack choices, asset pipeline, state machine diagram, roadmap
